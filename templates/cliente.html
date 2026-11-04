@@ -1,0 +1,206 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Punto Escolar</title>
+<style>
+:root{--az:#2563EB;--tx:#0F172A;--gr:#64748B;--bd:#E2E8F0;--fd:#F1F5F9}
+*{box-sizing:border-box}
+body{margin:0;min-height:100vh;display:flex;justify-content:center;background:#E5E7EB;font-family:Inter,system-ui,sans-serif;color:var(--tx)}
+.card{background:#fff;width:100%;max-width:420px;min-height:100vh;padding:24px;display:flex;flex-direction:column}
+@media(min-width:480px){.card{min-height:680px;border-radius:32px;box-shadow:0 10px 40px #0002;margin:24px 0;align-self:center}}
+.screen{display:none;flex:1;flex-direction:column;gap:14px}.screen.on{display:flex}
+.eyebrow{font-size:12px;letter-spacing:.12em;color:var(--gr);font-weight:600;margin:0}
+h1{font-size:22px;margin:2px 0 0}
+.bar{display:flex;gap:6px;margin:6px 0}.bar i{flex:1;height:5px;border-radius:3px;background:var(--bd)}.bar i.f{background:var(--az)}
+label,.lab{font-size:12px;font-weight:600;color:var(--gr);letter-spacing:.06em;text-transform:uppercase;display:block;margin-bottom:6px}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.opt,.seg button{font:inherit;cursor:pointer;border:2px solid var(--bd);background:var(--fd);color:var(--tx);border-radius:16px}
+.opt{position:relative;padding:14px;text-align:left;min-height:120px}
+.opt b{display:block;font-size:16px;margin-top:8px}.opt span{font-size:12px;color:var(--gr)}
+.ico{width:40px;height:40px;border-radius:12px;display:grid;place-items:center}
+.ico svg{width:22px;height:22px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.azul{background:#DBEAFE;color:#1D4ED8}.mor{background:#EDE9FE;color:#6D28D9}.ver{background:#CCFBF1;color:#0F766E}
+.opt[aria-pressed=true]{border-color:var(--az);background:#EFF6FF}
+.opt[aria-pressed=true]::after{content:"✓";position:absolute;top:10px;right:10px;width:22px;height:22px;border-radius:50%;background:var(--az);color:#fff;font-size:13px;display:grid;place-items:center}
+.seg{display:flex;gap:8px}.seg button{flex:1;min-height:48px;padding:0 10px;font-weight:600;font-size:15px}
+.seg button[aria-pressed=true]{border-color:var(--az);background:#EFF6FF;color:#1D4ED8}
+select,textarea{width:100%;font:inherit;font-size:15px;padding:12px;border:2px solid var(--bd);background:var(--fd);border-radius:14px;min-height:48px}
+textarea{min-height:80px;resize:vertical}
+.cant{display:flex;align-items:center;gap:16px}.cant button{width:48px;height:48px;font-size:22px;border:0;border-radius:14px;background:var(--bd);cursor:pointer}
+.cant output{font-size:20px;font-weight:700;min-width:36px;text-align:center}
+.zona{border:2px dashed #94A3B8;border-radius:16px;padding:14px;display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+.zona small{color:var(--gr);word-break:break-all}
+.res{background:var(--fd);border-radius:16px;padding:14px;display:flex;gap:12px;align-items:center}.res p{margin:0;font-size:13px;color:var(--gr)}.res b{font-size:15px;color:var(--tx)}
+.msg{border-radius:12px;padding:0;font-size:14px}
+.msg.err{padding:12px;background:#FEF2F2;border:1px solid #DC2626;color:#991B1B}
+.nav{margin-top:auto;display:flex;gap:10px;padding-top:8px}
+.btn{font:inherit;font-weight:600;font-size:16px;min-height:52px;border:0;border-radius:18px;cursor:pointer;padding:0 18px}
+.pri{background:var(--az);color:#fff;flex:1}.sec{background:var(--bd);color:var(--tx)}
+.btn:disabled{opacity:.45;cursor:not-allowed}
+:focus-visible{outline:3px solid var(--az);outline-offset:2px}
+.centro{align-items:center;justify-content:center;text-align:center}
+.logo{width:64px;height:64px;border-radius:18px;background:var(--az);color:#fff;display:grid;place-items:center;font-size:30px}
+.check{width:72px;height:72px;border-radius:50%;background:#16A34A;color:#fff;font-size:38px;display:grid;place-items:center}
+.okbox{background:#F0FDF4;border-radius:20px;padding:18px;width:100%}.folio{font-size:34px;font-weight:800;margin:4px 0}
+.badge{display:inline-block;padding:4px 12px;border-radius:999px;background:#FEF3C7;color:#92400E;border:1px solid #F59E0B;font-weight:600;font-size:14px}
+[hidden]{display:none!important}
+</style>
+</head>
+<body>
+<main class="card">
+
+<!-- Menú principal del cliente -->
+<section id="menu" class="screen on centro">
+  <div class="logo" aria-hidden="true">🖨</div>
+  <h1>Punto Escolar</h1>
+  <p class="eyebrow">MENÚ PRINCIPAL</p>
+  <div class="okbox" style="background:var(--fd)">
+    <button class="btn pri" style="width:100%" id="iniciar">Registrar pedido</button>
+  </div>
+</section>
+
+<!-- Paso 1 -->
+<section id="p1" class="screen">
+  <div><p class="eyebrow">PASO 1 DE 3</p><h1>¿Qué necesitas?</h1><div class="bar"><i class="f"></i><i></i><i></i></div></div>
+  <div class="grid">
+    <button type="button" class="opt" data-s="impresion" aria-pressed="false"><span class="ico azul"><svg viewBox="0 0 24 24"><path d="M6 9V3h12v6M6 18H4v-7h16v7h-2M7 14h10v7H7z"/></svg></span><b>Impresión</b><span>Documentos y tareas</span></button>
+    <button type="button" class="opt" data-s="copiado" aria-pressed="false"><span class="ico azul"><svg viewBox="0 0 24 24"><rect x="8" y="8" width="12" height="12" rx="2"/><path d="M16 8V6a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h2"/></svg></span><b>Copiado</b><span>Copias de un original</span></button>
+    <button type="button" class="opt" data-s="diseno" aria-pressed="false"><span class="ico mor"><svg viewBox="0 0 24 24"><path d="M12 3a9 9 0 1 0 0 18c1.5 0 2-1 1.5-2s0-2 1.5-2h2a4 4 0 0 0 4-4c0-5-4.5-10-9-10zM7.5 11h.01M10 7h.01M15 8h.01"/></svg></span><b>Diseño</b><span>Invitaciones, carteles</span></button>
+    <button type="button" class="opt" data-s="engargolado" aria-pressed="false"><span class="ico ver"><svg viewBox="0 0 24 24"><path d="M5 4h11a3 3 0 0 1 3 3v13H8a3 3 0 0 1-3-3zM5 17a3 3 0 0 1 3-3h11"/></svg></span><b>Engargolado</b><span>Tareas y reportes</span></button>
+  </div>
+  <div class="msg" aria-live="polite"></div>
+  <div class="nav"><button class="btn sec" type="button" data-accion="cancelar">Cancelar</button><button class="btn pri" type="button" id="sig1">Siguiente →</button></div>
+</section>
+
+<!-- Paso 2 -->
+<section id="p2" class="screen">
+  <div><p class="eyebrow">PASO 2 DE 3</p><h1>Personaliza tu pedido</h1><div class="bar"><i class="f"></i><i class="f"></i><i></i></div></div>
+  <div id="g-modo"><span class="lab">Modo</span>
+    <div class="seg" data-k="modo"><button type="button" data-v="color" aria-pressed="true">Color</button><button type="button" data-v="bn" aria-pressed="false">B y N</button></div></div>
+  <div id="g-cant"><span class="lab">Cantidad</span>
+    <div class="cant"><button type="button" id="menos" aria-label="Menos copias">−</button><output id="n" aria-live="polite">1</output><button type="button" id="mas" aria-label="Más copias">+</button></div></div>
+  <div id="g-dis"><label for="tdis">Tipo de diseño</label>
+    <select id="tdis"><option>Invitación</option><option>Cartel</option><option>Tarjeta</option><option>Logotipo</option><option>Otro</option></select></div>
+  <div id="g-eng"><label for="teng">Tipo de engargolado</label>
+    <select id="teng"><option>Espiral</option><option>Argollado</option><option>Térmico</option></select>
+    <label for="cpas" style="margin-top:12px">Color de pastas</label>
+    <select id="cpas"><option>Azul</option><option>Negro</option><option>Rojo</option><option>Transparente</option></select></div>
+  <div><span class="lab">Tamaño de papel</span>
+    <div class="seg" data-k="tamano"><button type="button" data-v="Carta" aria-pressed="true">Carta</button><button type="button" data-v="Oficio" aria-pressed="false">Oficio</button><button type="button" data-v="A4" aria-pressed="false">A4</button></div></div>
+  <div class="msg" aria-live="polite"></div>
+  <div class="nav"><button class="btn sec" type="button" data-ir="p1">← Anterior</button><button class="btn pri" type="button" id="sig2">Siguiente →</button></div>
+</section>
+
+<!-- Paso 3 -->
+<section id="p3" class="screen">
+  <div><p class="eyebrow">PASO 3 DE 3</p><h1>Detalles finales</h1><div class="bar"><i class="f"></i><i class="f"></i><i class="f"></i></div></div>
+  <div><span class="lab">Forma de entrega del archivo</span>
+    <div class="seg" data-k="entrega"><button type="button" data-v="digital" aria-pressed="false">Digital</button><button type="button" data-v="usb" aria-pressed="false">USB</button></div></div>
+  <div class="zona" id="zona" hidden>
+    <button type="button" class="btn sec" id="adj" style="min-height:44px">⬆ Adjuntar archivo</button>
+    <small id="nom">Ningún archivo adjunto</small>
+    <input type="file" id="arch" hidden>
+  </div>
+  <div><label for="desc">Descripción</label><textarea id="desc" placeholder="Instrucciones u observaciones (opcional)"></textarea></div>
+  <div><span class="lab">Resumen del pedido</span><div class="res"><span class="ico azul" aria-hidden="true">📄</span><div><b id="r-serv"></b><p id="r-det"></p></div></div></div>
+  <div class="msg" aria-live="polite"></div>
+  <div class="nav"><button class="btn sec" type="button" data-ir="p2">← Anterior</button><button class="btn pri" type="button" id="reg" disabled>Registrar pedido</button></div>
+</section>
+
+<!-- Confirmación -->
+<section id="ok" class="screen centro">
+  <div class="check" aria-hidden="true">✓</div>
+  <h1>Pedido registrado correctamente</h1>
+  <div class="okbox"><p class="eyebrow">FOLIO</p><div class="folio" id="folio"></div><span class="badge" id="est"></span></div>
+  <div class="nav" style="width:100%"><button class="btn pri" type="button" data-accion="cancelar">Volver al Menú Principal</button></div>
+</section>
+
+</main>
+<script>
+const A1 = "Debe adjuntar el archivo digital para registrar el pedido.";
+const A2 = "Complete el tipo de servicio y la forma de entrega.";
+const NOMBRE = {impresion:"Impresión", copiado:"Copiado", diseno:"Diseño", engargolado:"Engargolado"};
+const st = {servicio:null, modo:"color", copias:1, tamano:"Carta", entrega:null, archivo:null};
+const $ = s => document.querySelector(s), $$ = s => [...document.querySelectorAll(s)];
+const imprime = () => ["impresion","copiado"].includes(st.servicio);
+
+function ir(id){
+  $$(".screen").forEach(s => s.classList.toggle("on", s.id === id));
+  $$(".msg").forEach(m => {m.className = "msg"; m.textContent = "";});
+}
+function decir(t){ const m = $(".screen.on .msg"); m.className = "msg err"; m.textContent = "⚠ " + t; }
+
+$("#iniciar").onclick = () => ir("p1");
+$$("[data-ir]").forEach(b => b.onclick = () => ir(b.dataset.ir));
+$$("[data-accion=cancelar]").forEach(b => b.onclick = () => location.reload()); // A3: no se crea nada
+
+$$("#p1 .opt").forEach(b => b.onclick = () => {
+  st.servicio = b.dataset.s;
+  $$("#p1 .opt").forEach(x => x.setAttribute("aria-pressed", x === b));
+  $("#p1 .msg").className = "msg"; $("#p1 .msg").textContent = "";
+});
+$("#sig1").onclick = () => {
+  if (!st.servicio) return decir(A2);
+  $("#g-modo").hidden = $("#g-cant").hidden = !imprime();
+  $("#g-dis").hidden = st.servicio !== "diseno";
+  $("#g-eng").hidden = st.servicio !== "engargolado";
+  ir("p2");
+};
+
+$$(".seg").forEach(g => g.querySelectorAll("button").forEach(b => b.onclick = () => {
+  g.querySelectorAll("button").forEach(x => x.setAttribute("aria-pressed", x === b));
+  st[g.dataset.k] = b.dataset.v;
+  if (g.dataset.k === "entrega") {
+    $("#zona").hidden = st.entrega !== "digital";
+    $("#reg").disabled = false;
+    $("#p3 .msg").className = "msg"; $("#p3 .msg").textContent = "";
+  }
+}));
+$("#menos").onclick = () => { st.copias = Math.max(1, st.copias - 1); $("#n").textContent = st.copias; };
+$("#mas").onclick = () => { st.copias++; $("#n").textContent = st.copias; };
+
+$("#adj").onclick = () => $("#arch").click();
+$("#arch").onchange = e => {
+  st.archivo = e.target.files[0] || null;
+  $("#nom").textContent = st.archivo ? st.archivo.name : "Ningún archivo adjunto";
+};
+
+$("#sig2").onclick = () => {
+  const d = [];
+  if (imprime()) d.push(st.modo === "color" ? "A color" : "Blanco y negro", st.copias + " copia(s)");
+  if (st.servicio === "diseno") d.push($("#tdis").value);
+  if (st.servicio === "engargolado") d.push($("#teng").value, "pastas " + $("#cpas").value.toLowerCase());
+  d.push(st.tamano);
+  $("#r-serv").textContent = NOMBRE[st.servicio];
+  $("#r-det").textContent = d.join(" · ");
+  ir("p3");
+};
+
+$("#reg").onclick = async () => {
+  if (!st.servicio || !st.entrega) return decir(A2);
+  if (st.entrega === "digital" && !st.archivo) return decir(A1);
+  const d = new FormData();
+  d.append("servicio", st.servicio);
+  d.append("tipo_entrega", st.entrega);
+  d.append("tamano_hojas", st.tamano);
+  if (imprime()) { d.append("es_color", st.modo === "color" ? "1" : "0"); d.append("num_copias", st.copias); }
+  if (st.servicio === "diseno") d.append("tipo_diseno", $("#tdis").value);
+  if (st.servicio === "engargolado") { d.append("tipo_engargolado", $("#teng").value); d.append("color_pastas", $("#cpas").value); }
+  d.append("descripcion", $("#desc").value);
+  if (st.entrega === "digital") d.append("archivo", st.archivo);
+  $("#reg").disabled = true;
+  try {
+    const j = await (await fetch("/pedido", {method:"POST", body:d})).json();
+    if (j.ok) {
+      $("#folio").textContent = "#" + j.folio;
+      $("#est").textContent = j.estado.charAt(0).toUpperCase() + j.estado.slice(1);
+      ir("ok");
+    } else decir(j.error);
+  } catch (e) { decir("No se pudo conectar con el servidor."); }
+  $("#reg").disabled = false;
+};
+</script>
+</body>
+</html>
