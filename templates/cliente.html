@@ -46,21 +46,93 @@ textarea{min-height:80px;resize:vertical}
 .okbox{background:#F0FDF4;border-radius:20px;padding:18px;width:100%}.folio{font-size:34px;font-weight:800;margin:4px 0}
 .badge{display:inline-block;padding:4px 12px;border-radius:999px;background:#FEF3C7;color:#92400E;border:1px solid #F59E0B;font-weight:600;font-size:14px}
 [hidden]{display:none!important}
+
+/* Mis Pedidos */
+.top{display:flex;justify-content:space-between;align-items:center}
+.marca2{display:flex;align-items:center;gap:12px}.marca2 b{display:block;font-size:17px}.marca2 small{font-size:11px;letter-spacing:.1em;color:var(--gr);font-weight:600}
+.logo2{width:42px;height:42px;border-radius:12px;background:var(--az);color:#fff;display:grid;place-items:center}
+svg.i{width:22px;height:22px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.acciones{display:flex;gap:8px;align-items:center}.rel{position:relative}
+.ibtn{position:relative;width:44px;height:44px;border-radius:50%;border:0;background:var(--fd);color:var(--tx);display:grid;place-items:center;cursor:pointer;text-decoration:none}
+.punto{position:absolute;top:10px;right:11px;width:9px;height:9px;border-radius:50%;background:var(--az);border:2px solid #fff}
+.panel{position:absolute;right:0;top:52px;width:270px;background:#fff;border:1px solid var(--bd);border-radius:16px;box-shadow:0 10px 30px #0002;padding:8px;z-index:5}
+.nt{padding:10px;border-bottom:1px solid var(--bd);font-size:13px}.nt:last-child{border:0}.nt small{display:block;color:var(--gr);margin-top:2px}
+.saludo{display:flex;justify-content:space-between;align-items:flex-end;border-bottom:1px solid var(--bd);padding-bottom:14px}
+.saludo p{margin:0;color:var(--gr);font-size:14px}.saludo p b{color:var(--tx)}
+.cuentas{display:flex;gap:8px}.cu{border-radius:14px;padding:8px 12px;text-align:center;min-width:64px}
+.cu b{display:block;font-size:20px}.cu span{font-size:11px}
+.am{background:#FFFBEB;border:1px solid #FDE68A;color:#D97706}.vd{background:#F0FDF4;border:1px solid #BBF7D0;color:#16A34A}
+.msg.okm{padding:12px;background:#F0FDF4;border:1px solid #16A34A;color:#166534}
+.lista{display:flex;flex-direction:column;gap:14px}
+.ped{border:1px solid var(--bd);border-radius:20px;padding:16px;box-shadow:0 2px 8px #0000000a}
+.ped-top{display:flex;gap:14px}.ped-cuerpo{flex:1;min-width:0}
+.sico{width:52px;height:52px;border-radius:14px;display:grid;place-items:center;flex-shrink:0}
+.ped-fila{display:flex;justify-content:space-between;align-items:center;gap:8px}.ped-fila b{font-size:16px}
+.ped-desc{margin:4px 0;font-size:14px;color:#334155;overflow-wrap:anywhere}.ped-sub{font-size:12px;color:var(--gr)}
+.est{font-size:12px;font-weight:600;border-radius:999px;padding:3px 10px;white-space:nowrap}
+.est::before{content:"● ";font-size:9px}
+.st-pendiente{background:#FFFBEB;border:1px solid #FDE68A;color:#B45309}
+.st-listo{background:#F0FDF4;border:1px solid #BBF7D0;color:#15803D}
+.st-entregado{background:#F1F5F9;border:1px solid #CBD5E1;color:#475569}
+.ped-pie{border-top:1px solid var(--bd);margin-top:12px;padding-top:10px;display:flex;justify-content:space-between;align-items:center}
+.folio{color:#94A3B8;font-size:13px}.recoger{color:#16A34A;font-size:13px;font-weight:600}
+.cancelar{border:0;background:#FEF2F2;color:#DC2626;border-radius:10px;padding:0 12px;min-height:44px;font:inherit;font-size:13px;cursor:pointer}
+.vacio{text-align:center;color:var(--gr);padding:28px 12px;margin:0}
+.barra{position:sticky;bottom:0;margin:auto -24px -24px;padding:18px 24px 24px;background:linear-gradient(#fff0,#fff 35%)}
 </style>
 </head>
 <body>
 <main class="card">
 
-<!-- Menú principal del cliente -->
-<section id="menu" class="screen on centro">
-  <div class="logo" aria-hidden="true">🖨</div>
-  <h1>Punto Escolar</h1>
-  <p class="eyebrow">MENÚ PRINCIPAL</p>
-  <p style="margin:0;color:var(--gr)">Hola, <b style="color:var(--tx)">{{ nombre }}</b></p>
-  <div class="okbox" style="background:var(--fd)">
-    <button class="btn pri" style="width:100%" id="iniciar">Registrar pedido</button>
+<!-- Menú principal del cliente: Mis Pedidos -->
+{% set ico = {
+ 'impresion':'<svg class="i" viewBox="0 0 24 24"><path d="M6 9V3h12v6M6 18H4v-7h16v7h-2M7 14h10v7H7z"/></svg>',
+ 'copiado':'<svg class="i" viewBox="0 0 24 24"><rect x="8" y="8" width="12" height="12" rx="2"/><path d="M16 8V6a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h2"/></svg>',
+ 'diseno':'<svg class="i" viewBox="0 0 24 24"><path d="M12 3a9 9 0 1 0 0 18c1.5 0 2-1 1.5-2s0-2 1.5-2h2a4 4 0 0 0 4-4c0-5-4.5-10-9-10z"/></svg>',
+ 'engargolado':'<svg class="i" viewBox="0 0 24 24"><path d="M5 4h11a3 3 0 0 1 3 3v13H8a3 3 0 0 1-3-3zM5 17a3 3 0 0 1 3-3h11"/></svg>'} %}
+{% set color = {'impresion':'azul','copiado':'azul','diseno':'mor','engargolado':'ver'} %}
+<section id="menu" class="screen on">
+  <header class="top">
+    <div class="marca2"><span class="logo2" aria-hidden="true"><svg class="i" viewBox="0 0 24 24"><path d="M6 9V3h12v6M6 18H4v-7h16v7h-2M7 14h10v7H7z"/></svg></span>
+      <div><b>Punto Escolar</b><small>IMPRESIÓN · DISEÑO</small></div></div>
+    <div class="acciones">
+      <div class="rel">
+        <button type="button" class="ibtn" id="campana" aria-label="Notificaciones" aria-expanded="false"><svg class="i" viewBox="0 0 24 24"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 8 3 8H3s3-1 3-8zM10 20a2 2 0 0 0 4 0"/></svg>{% if hay_sin_leer %}<i class="punto" id="punto"></i>{% endif %}</button>
+        <div class="panel" id="panel" hidden>
+          {% for n in notifs %}<div class="nt">{{ n.mensaje }}<small>{{ n.fecha }}</small></div>{% else %}<p class="vacio" style="padding:14px">No tienes notificaciones.</p>{% endfor %}
+        </div>
+      </div>
+      <a class="ibtn" href="{{ url_for('cliente_logout') }}" aria-label="Cerrar sesión" title="Cerrar sesión"><svg class="i" viewBox="0 0 24 24"><path d="M9 4H5v16h4M16 8l4 4-4 4M20 12H9"/></svg></a>
+    </div>
+  </header>
+  <div class="saludo">
+    <div><p>Hola, <b>{{ nombre }}</b></p><h1>Mis Pedidos</h1></div>
+    <div class="cuentas"><div class="cu am"><b>{{ resumen.pendientes }}</b><span>pendientes</span></div><div class="cu vd"><b>{{ resumen.listos }}</b><span>listos</span></div></div>
   </div>
-  <a href="{{ url_for('cliente_logout') }}" style="color:var(--gr);font-weight:600;font-size:14px;padding:12px">Cerrar sesión</a>
+  <div aria-live="polite">{% for tipo, texto in get_flashed_messages(with_categories=true) %}<div class="msg {{ 'err' if tipo == 'err' else 'okm' }}">{{ '⚠ ' if tipo == 'err' }}{{ texto }}</div>{% endfor %}</div>
+  <div class="lista">
+  {% for p in pedidos %}
+    <article class="ped">
+      <div class="ped-top">
+        <span class="sico {{ color[p.servicio] }}" aria-hidden="true">{{ ico[p.servicio]|safe }}</span>
+        <div class="ped-cuerpo">
+          <div class="ped-fila"><b>{{ p.servicio_nombre }}</b><span class="est st-{{ p.estado }}">{{ p.estado|capitalize }}</span></div>
+          <p class="ped-desc">{{ p.desc }}</p>
+          <div class="ped-fila"><span class="ped-sub">{{ p.detalle }}</span><span class="ped-sub">{{ p.fecha }}</span></div>
+        </div>
+      </div>
+      <div class="ped-pie">
+        <span class="folio">#{{ p.folio }}</span>
+        {% if p.estado == 'pendiente' %}<button type="button" class="cancelar" data-folio="{{ p.folio }}">✕ Cancelar pedido</button>
+        {% elif p.estado == 'listo' %}<span class="recoger">✓ Listo para recoger</span>
+        {% else %}<span class="ped-sub">Entregado</span>{% endif %}
+      </div>
+    </article>
+  {% else %}
+    <p class="vacio">Aún no tienes pedidos. Pulsa «Nuevo Pedido» para registrar el primero.</p>
+  {% endfor %}
+  </div>
+  <div class="barra"><button class="btn pri" style="width:100%" id="iniciar" type="button">+ Nuevo Pedido</button></div>
 </section>
 
 <!-- Paso 1 -->
@@ -135,6 +207,20 @@ function ir(id){
 function decir(t){ const m = $(".screen.on .msg"); m.className = "msg err"; m.textContent = "⚠ " + t; }
 
 $("#iniciar").onclick = () => ir("p1");
+
+$$(".cancelar").forEach(b => b.onclick = async () => {
+  if (!confirm("¿Cancelar el pedido #" + b.dataset.folio + "? Esta acción no se puede deshacer.")) return;
+  b.disabled = true;
+  try { await fetch("/pedido/" + b.dataset.folio + "/cancelar", {method: "POST"}); }
+  catch (e) { alert("No se pudo conectar con el servidor."); b.disabled = false; return; }
+  location.reload();  // el servidor deja el mensaje de resultado
+});
+$("#campana").onclick = () => {
+  const panel = $("#panel");
+  panel.hidden = !panel.hidden;
+  $("#campana").setAttribute("aria-expanded", String(!panel.hidden));
+  if (!panel.hidden && $("#punto")) { $("#punto").remove(); fetch("/cliente/notificaciones/leer", {method: "POST"}); }
+};
 $$("[data-ir]").forEach(b => b.onclick = () => ir(b.dataset.ir));
 $$("[data-accion=cancelar]").forEach(b => b.onclick = () => location.reload()); // A3: no se crea nada
 

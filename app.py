@@ -149,11 +149,124 @@ def cliente_logout():
 # ----------------------------------------------------------------------
 # Interfaz del cliente (CU-03 Registrar Pedido)
 # ----------------------------------------------------------------------
+MESES = ["ene", "feb", "mar", "abr", "may", "jun", "jul", "ago", "sep", "oct", "nov", "dic"]
+NOMBRE_SERVICIO = {"impresion": "Impresión", "copiado": "Copiado",
+                   "diseno": "Diseño", "engargolado": "Engargolado"}
+
+
+def fecha_corta(f):
+    return f"{f.day} {MESES[f.month - 1]}"
+
+
+def preparar_pedido(p):
+    """Arma los textos que se muestran en la tarjeta de un pedido."""
+    s = p["servicio"]
+    tam = (p["tamano_hojas"] or "").lower()
+    if s in ("impresion", "copiado"):
+        n = p["num_copias"] or 1
+        partes = [f"{n} copia{'s' if n != 1 else ''}", tam, "a color" if p["es_color"] else "B y N"]
+    elif s == "diseno":
+        partes = [p["tipo_diseno"] or "", tam]
+    else:
+        partes = [f"{p['tipo_engargolado'] or ''} {(p['color_pastas'] or '').lower()}".strip(), tam]
+    desc = (p["descripcion"] or "").strip() or "Sin descripción"
+    if len(desc) > 60:
+        desc = desc[:57] + "..."
+    return {"folio": p["folio"], "servicio": s, "servicio_nombre": NOMBRE_SERVICIO[s],
+            "estado": p["estado"], "desc": desc,
+            "detalle": " · ".join(x for x in partes if x), "fecha": fecha_corta(p["fecha_registro"])}
+
+
 @app.route("/cliente/menu")
 @solo_cliente
 def cliente_menu():
-    """Menú principal del cliente."""
-    return render_template("cliente.html", nombre=session["nombre"])
+    """Menú principal del cliente: estado de sus pedidos (RF-05, RF-18) y avisos (RF-04)."""
+    id_cliente = session["id_usuario"]
+    conn = get_connection()
+    try:
+        cur = conn.cursor(dictionary=True)
+        cur.execute(
+            """SELECT id_pedido AS folio, servicio, estado, es_color, num_copias, tipo_diseno,
+                      tipo_engargolado, tamano_hojas, color_pastas, descripcion, fecha_registro
+               FROM pedido WHERE id_cliente = %s
+               ORDER BY fecha_registro DESC, id_pedido DESC""", (id_cliente,))
+        pedidos = [preparar_pedido(p) for p in cur.fetchall()]
+        cur.execute(
+            """SELECT mensaje, fecha_envio, leida FROM notificacion WHERE id_usuario = %s
+               ORDER BY fecha_envio DESC, id_notificacion DESC LIMIT 10""", (id_cliente,))
+        notifs = [{"mensaje": n["mensaje"], "fecha": fecha_corta(n["fecha_envio"]), "leida": n["leida"]}
+                  for n in cur.fetchall()]
+    finally:
+        conn.close()
+    resumen = {"pendientes": sum(p["estado"] == "pendiente" for p in pedidos),
+               "listos": sum(p["estado"] == "listo" for p in pedidos)}
+    return render_template("cliente.html", nombre=session["nombre"], pedidos=pedidos, resumen=resumen,
+                           notifs=notifs, hay_sin_leer=any(not n["leida"] for n in notifs))
+
+
+@app.route("/pedido/<int:folio>/cancelar", methods=["POST"])
+def cancelar_pedido(folio):
+    """RF-17 / RN-03: el cliente solo puede cancelar su pedido si está pendiente."""
+    if session.get("rol") != "cliente":
+        return error("Su sesión terminó. Inicie sesión de nuevo.", 401)
+    id_cliente = session["id_usuario"]
+    ruta = None
+    conn = get_connection()
+    try:
+        cur = conn.cursor(dictionary=True)
+        cur.execute("SELECT estado FROM pedido WHERE id_pedido = %s AND id_cliente = %s", (folio, id_cliente))
+        fila = cur.fetchone()
+        if not fila:
+            flash("El pedido no existe.", "err")
+            return error("El pedido no existe.", 404)
+        if fila["estado"] != "pendiente":
+            flash("Solo se puede cancelar un pedido pendiente.", "err")
+            return error("Solo se puede cancelar un pedido pendiente.", 409)
+        cur.execute("SELECT ruta FROM archivo WHERE id_pedido = %s", (folio,))
+        archivo = cur.fetchone()
+        ruta = archivo["ruta"] if archivo else None
+        # Se borra el pedido; su archivo y notificaciones se eliminan en cascada (ON DELETE CASCADE)
+        cur.execute("DELETE FROM pedido WHERE id_pedido = %s AND id_cliente = %s AND estado = 'pendiente'",
+                    (folio, id_cliente))
+        if cur.rowcount != 1:
+            conn.rollback()
+            flash("Solo se puede cancelar un pedido pendiente.", "err")
+            return error("Solo se puede cancelar un pedido pendiente.", 409)
+        conn.commit()
+    except mysql.connector.Error as e:
+        conn.rollback()
+        print("Error al cancelar pedido:", e)
+        flash("No se pudo cancelar el pedido. Intente de nuevo.", "err")
+        return error("No se pudo cancelar el pedido.", 500)
+    finally:
+        conn.close()
+
+    if ruta:  # también se borra el archivo guardado en el servidor
+        carpeta = os.path.join(BASE, "uploads")
+        destino = os.path.abspath(os.path.join(BASE, ruta))
+        if destino.startswith(carpeta + os.sep) and os.path.isfile(destino):
+            try:
+                os.remove(destino)
+            except OSError:
+                pass
+    flash(f"Pedido #{folio} cancelado correctamente.", "ok")
+    return jsonify(ok=True)
+
+
+@app.route("/cliente/notificaciones/leer", methods=["POST"])
+def notificaciones_leer():
+    """Marca como leídas las notificaciones del cliente al abrir la campana."""
+    if session.get("rol") != "cliente":
+        return error("Su sesión terminó.", 401)
+    conn = get_connection()
+    try:
+        cur = conn.cursor()
+        cur.execute("UPDATE notificacion SET leida = TRUE WHERE id_usuario = %s AND leida = FALSE",
+                    (session["id_usuario"],))
+        conn.commit()
+    finally:
+        conn.close()
+    return jsonify(ok=True)
 
 
 @app.route("/pedido", methods=["POST"])
