@@ -1,0 +1,80 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>{% block titulo %}{% endblock %} · Punto Escolar</title>
+<style>
+:root{--az:#2563EB;--tx:#0F172A;--gr:#64748B;--bd:#E2E8F0;--fd:#F8FAFC}
+*{box-sizing:border-box}
+body{margin:0;font-family:Inter,system-ui,sans-serif;color:var(--tx);background:#fff}
+.wrap{display:flex;min-height:100vh}
+.lado{width:clamp(300px,23vw,440px);flex-shrink:0;background:linear-gradient(160deg,#1E3A8A,#2563EB 55%,#3B82F6);color:#fff;padding:32px;display:flex;flex-direction:column;justify-content:center;align-items:center;text-align:center}
+.lado .ico{width:72px;height:72px;border-radius:20px;background:#ffffff26;border:1px solid #ffffff40;display:grid;place-items:center;margin-bottom:20px}
+.lado h2{font-size:34px;margin:0 0 6px}
+.lado .lema{font-weight:600;margin:0 0 14px}
+.lado .desc{color:#DBEAFE;font-size:15px;line-height:1.6;margin:0}
+.chips{display:grid;grid-template-columns:1fr 1fr;gap:12px;width:100%;margin:32px 0 28px}
+.chip{display:flex;align-items:center;gap:10px;padding:12px;border-radius:12px;background:#ffffff1f;border:1px solid #ffffff33;font-weight:600;font-size:14px;text-align:left}
+.lado small{letter-spacing:.14em;font-size:11px;color:#BFDBFE}
+svg{width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;flex-shrink:0}
+.lado .ico svg{width:34px;height:34px}
+.cont{flex:1;display:flex;justify-content:center;align-items:center;padding:32px 20px}
+.form{width:100%;max-width:450px}
+.volver{display:inline-block;margin-bottom:20px;color:var(--tx);font-weight:600;font-size:14px;text-decoration:none}
+.marca{display:flex;align-items:center;gap:10px;font-weight:700;margin-bottom:28px}
+.marca .logo{width:36px;height:36px;border-radius:10px;background:var(--az);color:#fff;display:grid;place-items:center}
+h1{font-size:30px;margin:0 0 8px}
+.sub{color:var(--gr);margin:0 0 24px;line-height:1.5}
+label{display:block;font-size:13px;font-weight:600;margin:16px 0 8px}
+.campo{position:relative}
+.campo .ic{position:absolute;left:14px;top:50%;transform:translateY(-50%);color:var(--gr);display:flex}
+.campo input{width:100%;height:52px;font:inherit;font-size:15px;padding:0 46px 0 44px;border:1px solid var(--bd);border-radius:12px;background:var(--fd);color:var(--tx)}
+.campo .ojo{position:absolute;right:6px;top:50%;transform:translateY(-50%);width:44px;height:44px;border:0;background:none;color:var(--gr);cursor:pointer;display:grid;place-items:center}
+:focus-visible{outline:3px solid var(--az);outline-offset:2px}
+.msg{margin-top:18px;border-radius:12px;font-size:14px;line-height:1.4}
+.msg.err{padding:12px 14px;background:#FEF2F2;border:1px solid #DC2626;color:#991B1B}
+.msg.ok{padding:12px 14px;background:#F0FDF4;border:1px solid #16A34A;color:#166534}
+.btn{width:100%;height:54px;margin-top:22px;font:inherit;font-weight:700;font-size:16px;color:#fff;background:var(--az);border:0;border-radius:14px;cursor:pointer;box-shadow:0 8px 20px #2563EB40}
+.btn:hover{background:#1D4ED8}
+.aviso{font-size:12px;color:var(--gr);text-align:center;margin:18px 0 0;line-height:1.5}
+.pie{text-align:center;color:var(--gr);font-size:14px;margin-top:20px}
+.pie a{color:var(--az);font-weight:600;text-decoration:none}
+@media(max-width:860px){.lado{display:none}.cont{align-items:flex-start;padding-top:40px}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <aside class="lado">
+    <div class="ico" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M6 9V3h12v6M6 18H4v-7h16v7h-2M7 14h10v7H7z"/></svg></div>
+    <h2>Punto Escolar</h2>
+    <p class="lema">Tu centro de impresión de confianza</p>
+    <p class="desc">Gestiona tus pedidos de impresión, copiado, diseño y engargolado desde cualquier lugar.</p>
+    <div class="chips" aria-hidden="true">
+      <div class="chip"><svg viewBox="0 0 24 24"><path d="M6 9V3h12v6M6 18H4v-7h16v7h-2M7 14h10v7H7z"/></svg>Impresión</div>
+      <div class="chip"><svg viewBox="0 0 24 24"><rect x="8" y="8" width="12" height="12" rx="2"/><path d="M16 8V6a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h2"/></svg>Copiado</div>
+      <div class="chip"><svg viewBox="0 0 24 24"><path d="M12 3a9 9 0 1 0 0 18c1.5 0 2-1 1.5-2s0-2 1.5-2h2a4 4 0 0 0 4-4c0-5-4.5-10-9-10z"/></svg>Diseño</div>
+      <div class="chip"><svg viewBox="0 0 24 24"><path d="M5 4h11a3 3 0 0 1 3 3v13H8a3 3 0 0 1-3-3zM5 17a3 3 0 0 1 3-3h11"/></svg>Engargolado</div>
+    </div>
+    <small>RÁPIDO · CONFIABLE · PROFESIONAL</small>
+  </aside>
+  <main class="cont">
+    <div class="form">
+      {% block arriba %}{% endblock %}
+      <div class="marca"><span class="logo" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M6 9V3h12v6M6 18H4v-7h16v7h-2M7 14h10v7H7z"/></svg></span>Punto Escolar</div>
+      {% block contenido %}{% endblock %}
+    </div>
+  </main>
+</div>
+<script>
+document.addEventListener("click", function (e) {
+  var b = e.target.closest(".ojo");
+  if (!b) return;
+  var i = b.parentElement.querySelector("input");
+  var ver = i.type === "password";
+  i.type = ver ? "text" : "password";
+  b.setAttribute("aria-label", ver ? "Ocultar contraseña" : "Mostrar contraseña");
+});
+</script>
+</body>
+</html>

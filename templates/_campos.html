@@ -1,0 +1,26 @@
+{% set iconos = {
+  'mail': '<svg viewBox="0 0 24 24"><path d="M4 6h16v12H4zM4 7l8 6 8-6"/></svg>',
+  'lock': '<svg viewBox="0 0 24 24"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg>',
+  'user': '<svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 20a8 8 0 0 1 16 0"/></svg>',
+  'at': '<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M16 8v5a3 3 0 0 0 6 0v-1a10 10 0 1 0-4 8"/></svg>'
+} %}
+
+{% macro campo(id, etiqueta, tipo, icono, ayuda, valor='', auto='off', clave=false) %}
+<label for="{{ id }}">{{ etiqueta }}</label>
+<div class="campo">
+  <span class="ic" aria-hidden="true">{{ iconos[icono]|safe }}</span>
+  <input id="{{ id }}" name="{{ id }}" type="{{ tipo }}" placeholder="{{ ayuda }}" value="{{ valor }}" autocomplete="{{ auto }}">
+  {% if clave %}
+  <button type="button" class="ojo" aria-label="Mostrar contraseña"><svg viewBox="0 0 24 24"><path d="M2 12s4-7 10-7 10 7 10 7-4 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg></button>
+  {% endif %}
+</div>
+{% endmacro %}
+
+{% macro mensajes(error) %}
+<div role="alert" aria-live="polite">
+  {% for tipo, texto in get_flashed_messages(with_categories=true) %}
+  <div class="msg {{ tipo }}">{{ texto }}</div>
+  {% endfor %}
+  {% if error %}<div class="msg err">⚠ {{ error }}</div>{% endif %}
+</div>
+{% endmacro %}

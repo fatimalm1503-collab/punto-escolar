@@ -56,9 +56,11 @@ textarea{min-height:80px;resize:vertical}
   <div class="logo" aria-hidden="true">🖨</div>
   <h1>Punto Escolar</h1>
   <p class="eyebrow">MENÚ PRINCIPAL</p>
+  <p style="margin:0;color:var(--gr)">Hola, <b style="color:var(--tx)">{{ nombre }}</b></p>
   <div class="okbox" style="background:var(--fd)">
     <button class="btn pri" style="width:100%" id="iniciar">Registrar pedido</button>
   </div>
+  <a href="{{ url_for('cliente_logout') }}" style="color:var(--gr);font-weight:600;font-size:14px;padding:12px">Cerrar sesión</a>
 </section>
 
 <!-- Paso 1 -->

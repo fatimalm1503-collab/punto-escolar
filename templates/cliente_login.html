@@ -1,0 +1,15 @@
+{% extends "auth_base.html" %}
+{% from "_campos.html" import campo, mensajes %}
+{% block titulo %}Iniciar sesión{% endblock %}
+{% block contenido %}
+<h1>Iniciar Sesión</h1>
+<p class="sub">Bienvenido de nuevo.</p>
+<p class="sub1">Accede a tu cuenta.</p>
+<form method="post" novalidate>
+  {{ campo('ident', 'Correo electrónico o usuario', 'text', 'mail', 'nombre@correo.com', ident, 'username') }}
+  {{ campo('password', 'Contraseña', 'password', 'lock', 'Tu contraseña', '', 'current-password', true) }}
+  {{ mensajes(error) }}
+  <button class="btn" type="submit">Iniciar Sesión</button>
+</form>
+<p class="pie">¿Eres cliente nuevo? <a href="{{ url_for('cliente_registro') }}">Regístrate aquí</a></p>
+{% endblock %}
