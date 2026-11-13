@@ -74,7 +74,11 @@ td .folio{display:block;font-size:15px}td small{font-size:12px}
 .b.pendiente{background:#FFFBEB;border-color:#FDE68A;color:#B45309}
 .b.listo{background:#F0FDF4;border-color:#BBF7D0;color:#15803D}
 .b.entregado{background:#F1F5F9;border-color:#CBD5E1;color:#475569}
-.ver{font:inherit;font-size:14px;font-weight:600;color:var(--az);background:#EFF6FF;border:1px solid #BFDBFE;border-radius:10px;padding:0 14px;min-height:40px;cursor:pointer;white-space:nowrap}
+.ver{font:inherit;font-size:14px;font-weight:600;color:var(--az);background:#EFF6FF;border:1px solid #BFDBFE;border-radius:10px;padding:0 14px;min-height:40px;cursor:pointer;white-space:nowrap;transition:background .15s,color .15s,border-color .15s}
+/* Fila y botón abren lo mismo: al pasar el mouse sobre la fila (o si es la abierta), el botón se resalta */
+tbody tr[data-folio]:hover .ver,tbody tr.sel .ver{background:var(--az);border-color:var(--az);color:#fff}
+.ver:hover{background:#1D4ED8;border-color:#1D4ED8;color:#fff}
+.ver:focus-visible{outline:3px solid #93C5FD;outline-offset:2px}
 .sinfilas,.vacio{text-align:center;color:var(--gr);padding:36px 16px}
 @keyframes nueva{from{background:#FEF9C3}to{background:transparent}}
 tbody tr.nueva td{animation:nueva 2.5s ease-out}
@@ -342,12 +346,12 @@ async function eliminarArchivo(){
 // Delegación de eventos: las filas se vuelven a dibujar en cada actualización
 $("filas").addEventListener("click", e => {
   const tr = e.target.closest("tr[data-folio]");
-  if (tr) verPedido(tr);
+  if (!tr) return;
+  // Si la persona está seleccionando texto de la fila (para copiarlo), no abrir el panel
+  if (!e.target.closest(".ver") && String(window.getSelection()).trim()) return;
+  verPedido(tr);
 });
-$("filas").addEventListener("keydown", e => {
-  const tr = e.target.closest("tr[data-folio]");
-  if (tr && e.key === "Enter") verPedido(tr);
-});
+// El teclado usa el botón "Ver detalles" (Tab + Enter); la fila ya no es un segundo punto de enfoque
 $("p-cambiar").addEventListener("click", cambiarEstado);
 $("p-eliminar").addEventListener("click", eliminarArchivo);
 $("cerrar").addEventListener("click", cerrar);

@@ -4,7 +4,7 @@
  'diseno':'<svg viewBox="0 0 24 24"><path d="M12 3a9 9 0 1 0 0 18c1.5 0 2-1 1.5-2s0-2 1.5-2h2a4 4 0 0 0 4-4c0-5-4.5-10-9-10z"/></svg>',
  'engargolado':'<svg viewBox="0 0 24 24"><path d="M5 4h11a3 3 0 0 1 3 3v13H8a3 3 0 0 1-3-3zM5 17a3 3 0 0 1 3-3h11"/></svg>'} %}
 {% for p in pedidos %}
-<tr data-folio="{{ p.folio }}" data-estado="{{ p.estado }}" data-fecha="{{ p.iso }}" data-cliente="{{ p.id_cliente }}" tabindex="0">
+<tr data-folio="{{ p.folio }}" data-estado="{{ p.estado }}" data-fecha="{{ p.iso }}" data-cliente="{{ p.id_cliente }}" title="Clic para ver los detalles">
   <td><b class="folio">#{{ p.folio }}</b><small>{{ p.hora }} · {{ p.fecha }}</small></td>
   <td><span class="cli"><span class="av av{{ p.id_cliente % 6 }}" aria-hidden="true">{{ p.iniciales }}</span>{{ p.cliente }}</span></td>
   <td><span class="pill {{ p.servicio }}">{{ ico[p.servicio]|safe }}{{ p.servicio_nombre }}</span></td>
@@ -15,7 +15,7 @@
     {% else %}<span class="t">—</span>{% endif %}
     <small>{{ p.arch_tipo }}</small></span></td>
   <td><span class="b {{ p.estado }}">{{ p.estado|capitalize }}</span></td>
-  <td><button type="button" class="ver">Ver detalles →</button></td>
+  <td><button type="button" class="ver" aria-label="Ver detalles del pedido #{{ p.folio }}">Ver detalles →</button></td>
 </tr>
 {% else %}
 <tr><td colspan="7" class="sinfilas">No hay pedidos registrados.</td></tr>
