@@ -24,6 +24,8 @@ tbody tr.sel td{background:#DBEAFE}
 .b{display:inline-block;padding:3px 12px;border-radius:999px;font-size:13px;font-weight:600}
 .pendiente{background:#FEF3C7;color:#92400E}.listo{background:#DCFCE7;color:#166534}.entregado{background:#E2E8F0;color:#334155}
 small{color:#64748B}
+@keyframes nueva{from{background:#FEF9C3}to{background:transparent}}
+tbody tr.nueva td{animation:nueva 2.5s ease-out}
 
 /* Panel lateral (desde la derecha) */
 .fondo{position:fixed;inset:0;background:#0F172A66;opacity:0;pointer-events:none;transition:opacity .25s}
@@ -60,17 +62,8 @@ small{color:#64748B}
   <div class="tabla">
     <table>
       <thead><tr><th>Folio</th><th>Servicio</th><th>Entrega</th><th>Estado</th></tr></thead>
-      <tbody>
-      {% for p in pedidos %}
-        <tr data-folio="{{ p.folio }}" tabindex="0">
-          <td><b>#{{ p.folio }}</b><br><small>{{ p.fecha_registro.strftime('%d/%m/%Y %H:%M') }}</small></td>
-          <td>{{ p.servicio|capitalize }}</td>
-          <td>{{ p.tipo_entrega|upper }}</td>
-          <td><span class="b {{ p.estado }}">{{ p.estado|capitalize }}</span></td>
-        </tr>
-      {% else %}
-        <tr><td colspan="4">No hay pedidos registrados.</td></tr>
-      {% endfor %}
+      <tbody id="filas">
+      {% include "_empleado_filas.html" %}
       </tbody>
     </table>
   </div>
@@ -96,6 +89,7 @@ const TEXTO_BOTON = {listo: "Marcar como Listo", entregado: "Marcar como Entrega
 const $ = id => document.getElementById(id);
 const cap = t => t.charAt(0).toUpperCase() + t.slice(1);
 let actual = null; // {folio, estado}
+let abierto = null; // folio del pedido que muestra el panel
 
 function badge(el, estado){ el.className = "b " + estado; el.textContent = cap(estado); }
 
@@ -117,6 +111,7 @@ function pintarBoton(){
 
 function abrir(){ $("panel").classList.add("on"); $("fondo").classList.add("on"); $("panel").setAttribute("aria-hidden","false"); }
 function cerrar(){
+  abierto = null;
   $("panel").classList.remove("on"); $("fondo").classList.remove("on"); $("panel").setAttribute("aria-hidden","true");
   document.querySelectorAll("tr.sel").forEach(r => r.classList.remove("sel"));
 }
@@ -131,6 +126,7 @@ async function verPedido(tr){
   if (!data.ok){ alert(data.error); return; }
   const p = data.pedido;
   actual = {folio: p.folio, estado: p.estado};
+  abierto = p.folio;
   $("p-folio").textContent = "Pedido #" + p.folio;
   badge($("p-estado"), p.estado);
   const modo = p.es_color === null ? null : (p.es_color ? "Color" : "Blanco y negro");
@@ -165,7 +161,7 @@ async function cambiarEstado(){
     actual.estado = data.estado;
     badge($("p-estado"), data.estado);
     const tr = document.querySelector('tr[data-folio="' + actual.folio + '"]');
-    badge(tr.querySelector(".b"), data.estado);
+    if (tr){ tr.dataset.estado = data.estado; badge(tr.querySelector(".b"), data.estado); }
     pintarBoton();
   } catch (e) {
     $("p-error").textContent = "No se pudo conectar con el servidor."; $("p-error").hidden = false;
@@ -174,14 +170,57 @@ async function cambiarEstado(){
   }
 }
 
-document.querySelectorAll("tr[data-folio]").forEach(tr => {
-  tr.addEventListener("click", () => verPedido(tr));
-  tr.addEventListener("keydown", e => { if (e.key === "Enter") verPedido(tr); });
+// Delegación de eventos: las filas se vuelven a dibujar en cada actualización
+$("filas").addEventListener("click", e => {
+  const tr = e.target.closest("tr[data-folio]");
+  if (tr) verPedido(tr);
+});
+$("filas").addEventListener("keydown", e => {
+  const tr = e.target.closest("tr[data-folio]");
+  if (tr && e.key === "Enter") verPedido(tr);
 });
 $("p-cambiar").addEventListener("click", cambiarEstado);
 $("cerrar").addEventListener("click", cerrar);
 $("fondo").addEventListener("click", cerrar);
 document.addEventListener("keydown", e => { if (e.key === "Escape") cerrar(); });
+
+// ---- Actualización en vivo: muestra los pedidos nuevos y los cambios sin recargar ----
+let ultimaFirma = null, consultando = false, primera = true;
+let conocidos = new Set(Array.from(document.querySelectorAll("tr[data-folio]"), r => r.dataset.folio));
+async function actualizar(){
+  if (consultando) return;
+  consultando = true;
+  try {
+    const r = await fetch("/empleado/pedidos/actualizar", {cache: "no-store"});
+    if (r.status === 401){ location.href = "/empleado/login"; return; }
+    const j = await r.json();
+    if (!j.ok || j.filas_html === ultimaFirma) return;
+    ultimaFirma = j.filas_html;
+    $("filas").innerHTML = j.filas_html;
+    const folios = new Set();
+    document.querySelectorAll("tr[data-folio]").forEach(tr => {
+      folios.add(tr.dataset.folio);
+      if (!conocidos.has(tr.dataset.folio)) tr.classList.add("nueva");
+      if (String(abierto) === tr.dataset.folio){
+        tr.classList.add("sel");
+        // Si el estado cambió desde otro lado, el panel se pone al día
+        if (actual && actual.estado !== tr.dataset.estado && !$("p-cambiar").disabled){
+          actual.estado = tr.dataset.estado;
+          badge($("p-estado"), actual.estado);
+          pintarBoton();
+        }
+      }
+    });
+    if (abierto !== null && !folios.has(String(abierto))){ // el cliente canceló ese pedido
+      cerrar();
+    }
+    conocidos = folios;
+    primera = false;
+  } catch (err) { /* sin conexión: se reintenta en la siguiente vuelta */ }
+  finally { consultando = false; }
+}
+setInterval(actualizar, 1000);
+document.addEventListener("visibilitychange", actualizar);
 </script>
 </body>
 </html>

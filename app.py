@@ -5,6 +5,7 @@ from functools import wraps
 import mysql.connector
 from flask import (Flask, render_template, request, jsonify, session,
                    redirect, url_for, flash)
+from flask.sessions import SecureCookieSessionInterface
 from werkzeug.security import generate_password_hash, check_password_hash
 from werkzeug.utils import secure_filename
 
@@ -13,6 +14,23 @@ from db import get_connection  # db.py carga el .env
 app = Flask(__name__)
 # La clave firma la sesión del usuario. Va en el .env (SECRET_KEY).
 app.secret_key = os.getenv("SECRET_KEY", "clave-solo-para-desarrollo")
+
+
+class SesionPorRol(SecureCookieSessionInterface):
+    """Usa una cookie distinta para el empleado y otra para el cliente.
+
+    Antes los dos compartían la cookie "session", así que al iniciar sesión en uno
+    se borraba la sesión del otro. Ahora todo lo que cuelga de /empleado usa la
+    cookie "session_empleado" y el resto usa "session_cliente"; así se puede estar
+    en las dos cuentas a la vez en el mismo navegador."""
+
+    def get_cookie_name(self, app):
+        if request.path.startswith("/empleado"):
+            return "session_empleado"
+        return "session_cliente"
+
+
+app.session_interface = SesionPorRol()
 
 BASE = os.path.dirname(os.path.abspath(__file__))
 os.makedirs(os.path.join(BASE, "uploads"), exist_ok=True)
@@ -474,10 +492,8 @@ def empleado_logout():
 SIGUIENTE_ESTADO = {"pendiente": "listo", "listo": "entregado"}  # RN-01: unico orden permitido
 
 
-@app.route("/empleado")
-@solo_empleado
-def lista_empleado():
-    """CU-07 Menú Principal Empleado: lista de todos los pedidos."""
+def cargar_pedidos_empleado():
+    """Todos los pedidos (los usan la lista y la actualización en vivo)."""
     conn = get_connection()
     try:
         cur = conn.cursor(dictionary=True)
@@ -485,9 +501,31 @@ def lista_empleado():
             """SELECT id_pedido AS folio, servicio, estado, tipo_entrega, fecha_registro
                FROM pedido ORDER BY fecha_registro DESC, id_pedido DESC"""
         )
-        return render_template("empleado.html", pedidos=cur.fetchall(), nombre=session["nombre"])
+        return cur.fetchall()
     finally:
         conn.close()
+
+
+@app.route("/empleado")
+@solo_empleado
+def lista_empleado():
+    """CU-07 Menú Principal Empleado: lista de todos los pedidos."""
+    respuesta = app.make_response(
+        render_template("empleado.html", pedidos=cargar_pedidos_empleado(), nombre=session["nombre"]))
+    respuesta.headers["Cache-Control"] = "no-store"
+    return respuesta
+
+
+@app.route("/empleado/pedidos/actualizar")
+@solo_empleado
+def empleado_actualizar():
+    """Filas actuales de la lista. La pantalla del empleado lo consulta cada segundo,
+    así ve al instante los pedidos nuevos que registran los clientes."""
+    respuesta = jsonify(
+        ok=True,
+        filas_html=render_template("_empleado_filas.html", pedidos=cargar_pedidos_empleado()))
+    respuesta.headers["Cache-Control"] = "no-store"
+    return respuesta
 
 
 @app.route("/empleado/pedido/<int:folio>")

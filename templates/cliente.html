@@ -293,7 +293,7 @@ async function actualizar(){
   } catch (err) { /* sin conexión: se reintenta en la siguiente vuelta */ }
   finally { consultando = false; }
 }
-setInterval(actualizar, 2000);
+setInterval(actualizar, 1000);
 document.addEventListener("visibilitychange", actualizar);
 </script>
 </body>

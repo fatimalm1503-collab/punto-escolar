@@ -1,0 +1,10 @@
+{% for p in pedidos %}
+<tr data-folio="{{ p.folio }}" data-estado="{{ p.estado }}" tabindex="0">
+  <td><b>#{{ p.folio }}</b><br><small>{{ p.fecha_registro.strftime('%d/%m/%Y %H:%M') }}</small></td>
+  <td>{{ p.servicio|capitalize }}</td>
+  <td>{{ p.tipo_entrega|upper }}</td>
+  <td><span class="b {{ p.estado }}">{{ p.estado|capitalize }}</span></td>
+</tr>
+{% else %}
+<tr><td colspan="4">No hay pedidos registrados.</td></tr>
+{% endfor %}
