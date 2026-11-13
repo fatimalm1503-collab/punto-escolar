@@ -492,16 +492,54 @@ def empleado_logout():
 SIGUIENTE_ESTADO = {"pendiente": "listo", "listo": "entregado"}  # RN-01: unico orden permitido
 
 
+def preparar_fila_empleado(p):
+    """Arma los textos que muestra cada fila de la tabla del empleado."""
+    s = p["servicio"]
+    tam = p["tamano_hojas"] or ""
+    if s in ("impresion", "copiado"):
+        n = p["num_copias"] or 1
+        partes = [f"{n} copia{'s' if n != 1 else ''}", "Color" if p["es_color"] else "B y N", tam]
+    elif s == "diseno":
+        partes = [p["tipo_diseno"] or "", tam]
+    else:
+        pastas = f"Pastas {p['color_pastas'].lower()}" if p["color_pastas"] else ""
+        partes = [p["tipo_engargolado"] or "", tam, pastas]
+    nota = (p["descripcion"] or "").strip()
+    if len(nota) > 45:
+        nota = nota[:42] + "..."
+    if p["tipo_entrega"] == "usb":
+        arch_clase, arch_tipo = "usb", "USB"
+    elif p["archivo_formato"]:
+        arch_clase, arch_tipo = "doc", p["archivo_formato"].upper()[:4]
+    else:  # entrega digital cuyo archivo ya se eliminó (RF-08)
+        arch_clase, arch_tipo = "nada", "Eliminado"
+    f = p["fecha_registro"]
+    return {"folio": p["folio"], "id_cliente": p["id_cliente"], "servicio": s,
+            "servicio_nombre": NOMBRE_SERVICIO[s], "estado": p["estado"],
+            "tipo_entrega": p["tipo_entrega"], "cliente": p["cliente"],
+            "iniciales": "".join(w[0] for w in p["cliente"].split()[:2]).upper(),
+            "espec": " · ".join(x for x in partes if x), "nota": nota,
+            "arch_clase": arch_clase, "arch_tipo": arch_tipo,
+            "hora": f.strftime("%H:%M"), "fecha": f"{f.day} {MESES[f.month - 1]} {f.year}",
+            "iso": f.strftime("%Y-%m-%d %H:%M:%S")}
+
+
 def cargar_pedidos_empleado():
     """Todos los pedidos (los usan la lista y la actualización en vivo)."""
     conn = get_connection()
     try:
         cur = conn.cursor(dictionary=True)
         cur.execute(
-            """SELECT id_pedido AS folio, servicio, estado, tipo_entrega, fecha_registro
-               FROM pedido ORDER BY fecha_registro DESC, id_pedido DESC"""
+            """SELECT p.id_pedido AS folio, p.id_cliente, p.servicio, p.estado, p.tipo_entrega,
+                      p.es_color, p.num_copias, p.tipo_diseno, p.tipo_engargolado, p.tamano_hojas,
+                      p.color_pastas, p.descripcion, p.fecha_registro,
+                      u.nombre AS cliente, a.formato AS archivo_formato
+               FROM pedido p
+               JOIN usuario u ON u.id_usuario = p.id_cliente
+               LEFT JOIN archivo a ON a.id_pedido = p.id_pedido
+               ORDER BY p.fecha_registro DESC, p.id_pedido DESC"""
         )
-        return cur.fetchall()
+        return [preparar_fila_empleado(p) for p in cur.fetchall()]
     finally:
         conn.close()
 
@@ -539,7 +577,7 @@ def detalle_pedido(folio):
             """SELECT p.id_pedido AS folio, p.servicio, p.estado, p.tipo_entrega,
                       p.es_color, p.num_copias, p.tipo_diseno, p.tipo_engargolado,
                       p.tamano_hojas, p.color_pastas, p.descripcion, p.fecha_registro,
-                      u.nombre AS cliente, a.nombre AS archivo
+                      p.id_cliente, u.nombre AS cliente, a.nombre AS archivo
                FROM pedido p
                JOIN usuario u ON u.id_usuario = p.id_cliente
                LEFT JOIN archivo a ON a.id_pedido = p.id_pedido
@@ -574,6 +612,49 @@ def descargar_archivo(folio):
     if not destino.startswith(carpeta + os.sep) or not os.path.isfile(destino):
         return "El archivo ya no está disponible en el servidor.", 404
     return send_file(destino, as_attachment=True, download_name=fila["nombre"])
+
+
+@app.route("/empleado/pedido/<int:folio>/archivo/eliminar", methods=["POST"])
+@solo_empleado
+def eliminar_archivo(folio):
+    """RF-08 / RN-02: solo se puede eliminar el archivo de un pedido ya entregado.
+    Se borra el registro de ARCHIVO y el archivo guardado; el pedido se conserva."""
+    ruta = None
+    conn = get_connection()
+    try:
+        cur = conn.cursor(dictionary=True)
+        cur.execute(
+            """SELECT p.estado, a.id_archivo, a.ruta
+               FROM pedido p LEFT JOIN archivo a ON a.id_pedido = p.id_pedido
+               WHERE p.id_pedido = %s""", (folio,))
+        fila = cur.fetchone()
+        if not fila:
+            return error("El pedido no existe.", 404)
+        if fila["estado"] != "entregado":
+            return error("Solo se puede eliminar el archivo de un pedido entregado.", 409)
+        if not fila["id_archivo"]:
+            return error("Este pedido no tiene archivo adjunto.", 404)
+        ruta = fila["ruta"]
+        cur.execute("DELETE FROM archivo WHERE id_pedido = %s", (folio,))
+        conn.commit()
+    except mysql.connector.Error as e:
+        conn.rollback()
+        print("Error al eliminar archivo:", e)
+        if "RN-02" in str(e):  # lo bloqueó el trigger de la BD
+            return error("Solo se puede eliminar el archivo de un pedido entregado.", 409)
+        return error("No se pudo eliminar el archivo. Intente de nuevo.", 500)
+    finally:
+        conn.close()
+
+    if ruta:  # también se borra el archivo guardado en el servidor
+        carpeta = os.path.join(BASE, "uploads")
+        destino = os.path.abspath(os.path.join(BASE, ruta))
+        if destino.startswith(carpeta + os.sep) and os.path.isfile(destino):
+            try:
+                os.remove(destino)
+            except OSError:
+                pass
+    return jsonify(ok=True, mensaje="Archivo eliminado correctamente.")
 
 
 @app.route("/empleado/pedido/<int:folio>/estado", methods=["POST"])
