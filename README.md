@@ -25,8 +25,11 @@ punto-escolar/
 ├── app.py            # servidor Flask y rutas
 ├── db.py             # conexión a la base de datos
 ├── schema.sql        # creación de la BD (tablas, triggers y datos de prueba)
-├── datos_prueba.sql  # repuebla las tablas con usuarios y pedidos de prueba
+├── datos_prueba.sql  # repuebla las 4 tablas (5 usuarios, 10 pedidos) y se autoverifica
+├── uploads/          # archivos de ejemplo de los pedidos digitales de datos_prueba.sql
+├── pruebas_reglas.sql# (opcional) prueba que los triggers y restricciones bloqueen lo indebido
 ├── probar_bd.py      # prueba rápida de conexión
+├── verificar_bd.py   # compara tu BD real con el diagrama (solo lee, no cambia nada)
 ├── requirements.txt
 ├── .env.example      # plantilla de configuración
 └── templates/
