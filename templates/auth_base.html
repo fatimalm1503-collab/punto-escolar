@@ -30,6 +30,11 @@ label{display:block;font-size:13px;font-weight:600;margin:16px 0 8px}
 .campo{position:relative}
 .campo .ic{position:absolute;left:14px;top:50%;transform:translateY(-50%);color:var(--gr);display:flex}
 .campo input{width:100%;height:52px;font:inherit;font-size:15px;padding:0 46px 0 44px;border:1px solid var(--bd);border-radius:12px;background:var(--fd);color:var(--tx)}
+/* Edge dibuja su propio "ojo" dentro de los campos de contraseña; se oculta para que solo se vea el nuestro.
+   Cada regla va por separado: si un navegador no reconoce una, no invalida a las demás. */
+input::-ms-reveal{display:none}
+input::-ms-clear{display:none}
+input[type="password"]::-ms-reveal{display:none;width:0;height:0;visibility:hidden}
 .campo .ojo{position:absolute;right:6px;top:50%;transform:translateY(-50%);width:44px;height:44px;border:0;background:none;color:var(--gr);cursor:pointer;display:grid;place-items:center}
 :focus-visible{outline:3px solid var(--az);outline-offset:2px}
 .msg{margin-top:18px;border-radius:12px;font-size:14px;line-height:1.4}
