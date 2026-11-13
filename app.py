@@ -4,7 +4,7 @@ from functools import wraps
 
 import mysql.connector
 from flask import (Flask, render_template, request, jsonify, session,
-                   redirect, url_for, flash)
+                   redirect, url_for, flash, send_file)
 from flask.sessions import SecureCookieSessionInterface
 from werkzeug.security import generate_password_hash, check_password_hash
 from werkzeug.utils import secure_filename
@@ -553,6 +553,27 @@ def detalle_pedido(folio):
         return jsonify(ok=True, pedido=fila)
     finally:
         conn.close()
+
+
+@app.route("/empleado/pedido/<int:folio>/archivo")
+@solo_empleado
+def descargar_archivo(folio):
+    """Deja al empleado descargar el archivo que el cliente subió a un pedido."""
+    conn = get_connection()
+    try:
+        cur = conn.cursor(dictionary=True)
+        cur.execute("SELECT nombre, ruta FROM archivo WHERE id_pedido = %s", (folio,))
+        fila = cur.fetchone()
+    finally:
+        conn.close()
+    if not fila:
+        return "Este pedido no tiene archivo adjunto.", 404
+    # Solo se sirven archivos que estén dentro de la carpeta uploads/
+    carpeta = os.path.join(BASE, "uploads")
+    destino = os.path.abspath(os.path.join(BASE, fila["ruta"]))
+    if not destino.startswith(carpeta + os.sep) or not os.path.isfile(destino):
+        return "El archivo ya no está disponible en el servidor.", 404
+    return send_file(destino, as_attachment=True, download_name=fila["nombre"])
 
 
 @app.route("/empleado/pedido/<int:folio>/estado", methods=["POST"])

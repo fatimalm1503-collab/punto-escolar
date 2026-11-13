@@ -42,6 +42,8 @@ tbody tr.nueva td{animation:nueva 2.5s ease-out}
 .val{font-size:15px;margin:0}
 .pie{padding:16px 24px;border-top:1px solid #E2E8F0}
 .btn{font:inherit;font-weight:600;font-size:16px;min-height:52px;width:100%;border:0;border-radius:16px;cursor:pointer;background:#2563EB;color:#fff}
+.descargar{display:flex;align-items:center;justify-content:center;gap:8px;min-height:48px;margin:0 0 10px;border-radius:16px;background:#EFF6FF;border:2px solid #2563EB;color:#1D4ED8;font-weight:600;font-size:16px;text-decoration:none}
+.descargar:hover{background:#DBEAFE}
 .btn:disabled{opacity:.45;cursor:not-allowed}
 .fin{margin:0;text-align:center;color:#64748B;font-size:14px}
 .err{margin:0 0 10px;padding:10px 12px;border-radius:12px;background:#FEF2F2;border:1px solid #DC2626;color:#991B1B;font-size:14px}
@@ -77,6 +79,7 @@ tbody tr.nueva td{animation:nueva 2.5s ease-out}
   </div>
   <div class="pc" id="p-detalles"></div>
   <div class="pie">
+    <a class="descargar" id="p-descargar" hidden>⬇ Descargar archivo</a>
     <p class="err" id="p-error" hidden></p>
     <button class="btn" id="p-cambiar" hidden></button>
     <p class="fin" id="p-fin" hidden>Pedido entregado. No hay más cambios de estado.</p>
@@ -143,6 +146,10 @@ async function verPedido(tr){
     fila("Color de pastas", p.color_pastas) +
     fila("Descripción", p.descripcion) +
     fila("Fecha de registro", p.fecha_registro);
+  // Botón de descarga: solo si el cliente subió un archivo
+  const desc = $("p-descargar");
+  desc.hidden = !p.archivo;
+  if (p.archivo) desc.href = "/empleado/pedido/" + p.folio + "/archivo";
   pintarBoton();
   abrir();
 }
