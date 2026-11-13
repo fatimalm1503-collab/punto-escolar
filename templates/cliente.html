@@ -85,12 +85,6 @@ svg.i{width:22px;height:22px;fill:none;stroke:currentColor;stroke-width:1.8;stro
 <main class="card">
 
 <!-- Menú principal del cliente: Mis Pedidos -->
-{% set ico = {
- 'impresion':'<svg class="i" viewBox="0 0 24 24"><path d="M6 9V3h12v6M6 18H4v-7h16v7h-2M7 14h10v7H7z"/></svg>',
- 'copiado':'<svg class="i" viewBox="0 0 24 24"><rect x="8" y="8" width="12" height="12" rx="2"/><path d="M16 8V6a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h2"/></svg>',
- 'diseno':'<svg class="i" viewBox="0 0 24 24"><path d="M12 3a9 9 0 1 0 0 18c1.5 0 2-1 1.5-2s0-2 1.5-2h2a4 4 0 0 0 4-4c0-5-4.5-10-9-10z"/></svg>',
- 'engargolado':'<svg class="i" viewBox="0 0 24 24"><path d="M5 4h11a3 3 0 0 1 3 3v13H8a3 3 0 0 1-3-3zM5 17a3 3 0 0 1 3-3h11"/></svg>'} %}
-{% set color = {'impresion':'azul','copiado':'azul','diseno':'mor','engargolado':'ver'} %}
 <section id="menu" class="screen on">
   <header class="top">
     <div class="marca2"><span class="logo2" aria-hidden="true"><svg class="i" viewBox="0 0 24 24"><path d="M6 9V3h12v6M6 18H4v-7h16v7h-2M7 14h10v7H7z"/></svg></span>
@@ -99,7 +93,7 @@ svg.i{width:22px;height:22px;fill:none;stroke:currentColor;stroke-width:1.8;stro
       <div class="rel">
         <button type="button" class="ibtn" id="campana" aria-label="Notificaciones" aria-expanded="false"><svg class="i" viewBox="0 0 24 24"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 8 3 8H3s3-1 3-8zM10 20a2 2 0 0 0 4 0"/></svg>{% if hay_sin_leer %}<i class="punto" id="punto"></i>{% endif %}</button>
         <div class="panel" id="panel" hidden>
-          {% for n in notifs %}<div class="nt">{{ n.mensaje }}<small>{{ n.fecha }}</small></div>{% else %}<p class="vacio" style="padding:14px">No tienes notificaciones.</p>{% endfor %}
+          {% include "_cliente_notifs.html" %}
         </div>
       </div>
       <a class="ibtn" href="{{ url_for('cliente_logout') }}" aria-label="Cerrar sesión" title="Cerrar sesión"><svg class="i" viewBox="0 0 24 24"><path d="M9 4H5v16h4M16 8l4 4-4 4M20 12H9"/></svg></a>
@@ -107,30 +101,10 @@ svg.i{width:22px;height:22px;fill:none;stroke:currentColor;stroke-width:1.8;stro
   </header>
   <div class="saludo">
     <div><p>Hola, <b>{{ nombre }}</b></p><h1>Mis Pedidos</h1></div>
-    <div class="cuentas"><div class="cu am"><b>{{ resumen.pendientes }}</b><span>pendientes</span></div><div class="cu vd"><b>{{ resumen.listos }}</b><span>listos</span></div></div>
+    <div class="cuentas"><div class="cu am"><b id="n-pend">{{ resumen.pendientes }}</b><span>pendientes</span></div><div class="cu vd"><b id="n-list">{{ resumen.listos }}</b><span>listos</span></div></div>
   </div>
   <div aria-live="polite">{% for tipo, texto in get_flashed_messages(with_categories=true) %}<div class="msg {{ 'err' if tipo == 'err' else 'okm' }}">{{ '⚠ ' if tipo == 'err' }}{{ texto }}</div>{% endfor %}</div>
-  <div class="lista">
-  {% for p in pedidos %}
-    <article class="ped">
-      <div class="ped-top">
-        <span class="sico {{ color[p.servicio] }}" aria-hidden="true">{{ ico[p.servicio]|safe }}</span>
-        <div class="ped-cuerpo">
-          <div class="ped-fila"><b>{{ p.servicio_nombre }}</b><span class="est st-{{ p.estado }}">{{ p.estado|capitalize }}</span></div>
-          <p class="ped-desc">{{ p.desc }}</p>
-          <div class="ped-fila"><span class="ped-sub">{{ p.detalle }}</span><span class="ped-sub">{{ p.fecha }}</span></div>
-        </div>
-      </div>
-      <div class="ped-pie">
-        <span class="folio">#{{ p.folio }}</span>
-        {% if p.estado == 'pendiente' %}<button type="button" class="cancelar" data-folio="{{ p.folio }}">✕ Cancelar pedido</button>
-        {% elif p.estado == 'listo' %}<span class="recoger">✓ Listo para recoger</span>
-        {% else %}<span class="ped-sub">Entregado</span>{% endif %}
-      </div>
-    </article>
-  {% else %}
-    <p class="vacio">Aún no tienes pedidos. Pulsa «Nuevo Pedido» para registrar el primero.</p>
-  {% endfor %}
+  <div class="lista" id="lista">{% include "_cliente_pedidos.html" %}
   </div>
   <div class="barra"><button class="btn pri" style="width:100%" id="iniciar" type="button">+ Nuevo Pedido</button></div>
 </section>
@@ -208,11 +182,14 @@ function decir(t){ const m = $(".screen.on .msg"); m.className = "msg err"; m.te
 
 $("#iniciar").onclick = () => ir("p1");
 
-$$(".cancelar").forEach(b => b.onclick = async () => {
+// Delegación de eventos: las tarjetas se vuelven a dibujar cuando cambia un estado
+$("#lista").addEventListener("click", async e => {
+  const b = e.target.closest(".cancelar");
+  if (!b) return;
   if (!confirm("¿Cancelar el pedido #" + b.dataset.folio + "? Esta acción no se puede deshacer.")) return;
   b.disabled = true;
   try { await fetch("/pedido/" + b.dataset.folio + "/cancelar", {method: "POST"}); }
-  catch (e) { alert("No se pudo conectar con el servidor."); b.disabled = false; return; }
+  catch (err) { alert("No se pudo conectar con el servidor."); b.disabled = false; return; }
   location.reload();  // el servidor deja el mensaje de resultado
 });
 $("#campana").onclick = () => {
@@ -289,6 +266,35 @@ $("#reg").onclick = async () => {
   } catch (e) { decir("No se pudo conectar con el servidor."); }
   $("#reg").disabled = false;
 };
+
+// ---- Actualización en vivo: refleja lo que el empleado cambia, sin recargar ----
+let ultimo = null, consultando = false;
+async function actualizar(){
+  if (consultando || document.hidden) return;
+  consultando = true;
+  try {
+    const r = await fetch("/cliente/pedidos/actualizar", {cache: "no-store"});
+    if (r.status === 401) { location.href = "/cliente/login"; return; }
+    const j = await r.json();
+    const firma = JSON.stringify(j);
+    if (firma === ultimo) return;
+    ultimo = firma;
+    $("#lista").innerHTML = j.pedidos_html;
+    $("#panel").innerHTML = j.notifs_html;
+    $("#n-pend").textContent = j.pendientes;
+    $("#n-list").textContent = j.listos;
+    const abierto = !$("#panel").hidden;
+    if (j.hay_sin_leer && abierto) fetch("/cliente/notificaciones/leer", {method: "POST"});
+    else if (j.hay_sin_leer && !$("#punto")) {
+      const punto = document.createElement("i");
+      punto.className = "punto"; punto.id = "punto";
+      $("#campana").appendChild(punto);
+    }
+  } catch (err) { /* sin conexión: se reintenta en la siguiente vuelta */ }
+  finally { consultando = false; }
+}
+setInterval(actualizar, 2000);
+document.addEventListener("visibilitychange", actualizar);
 </script>
 </body>
 </html>

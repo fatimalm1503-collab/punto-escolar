@@ -31,6 +31,7 @@ punto-escolar/
 ├── .env.example      # plantilla de configuración
 └── templates/
     ├── cliente.html            # CU-03 Registrar Pedido
+    ├── _cliente_pedidos.html / _cliente_notifs.html   # tarjetas y avisos (se redibujan en vivo)
     ├── cliente_login.html / cliente_registro.html
     ├── empleado.html           # CU-07 Menú Principal Empleado
     ├── empleado_login.html / empleado_registro.html
@@ -109,7 +110,8 @@ Para ver la vista del cliente desde un celular en la misma red Wi-Fi, ejecuta `f
 | Ruta | Quién | Qué hace |
 |---|---|---|
 | `/cliente/login`, `/cliente/registro` | Cliente | Acceso y alta de cliente |
-| `/cliente/menu` | Cliente | Registrar pedido y ver sus pedidos y avisos |
+| `/cliente/menu` | Cliente | Registrar pedido y ver sus pedidos y avisos (se actualiza solo cada 2 s) |
+| `/cliente/pedidos/actualizar` | Cliente | Estado actual de sus pedidos en JSON; lo consulta el menú |
 | `/empleado/login`, `/empleado/registro` | Empleado | Acceso y alta de empleado |
 | `/empleado` | Empleado | Lista de todos los pedidos, detalle y cambio de estado |
 

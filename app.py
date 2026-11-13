@@ -90,8 +90,12 @@ def cliente_registro():
                         (datos["nombre"], datos["usuario"], datos["correo"],
                          generate_password_hash(clave)))
                     conn.commit()
-                    flash("Cuenta creada correctamente. Inicia sesión para continuar.", "ok")
-                    return redirect(url_for("cliente_login"))
+                    # La cuenta recién creada inicia sesión sola y entra al menú del cliente
+                    session.clear()
+                    session["id_usuario"] = cur.lastrowid
+                    session["nombre"] = datos["nombre"]
+                    session["rol"] = "cliente"
+                    return redirect(url_for("cliente_menu"))
             except mysql.connector.IntegrityError:
                 conn.rollback()
                 mensaje = "Ese usuario o correo ya está registrado."
@@ -177,11 +181,8 @@ def preparar_pedido(p):
             "detalle": " · ".join(x for x in partes if x), "fecha": fecha_corta(p["fecha_registro"])}
 
 
-@app.route("/cliente/menu")
-@solo_cliente
-def cliente_menu():
-    """Menú principal del cliente: estado de sus pedidos (RF-05, RF-18) y avisos (RF-04)."""
-    id_cliente = session["id_usuario"]
+def cargar_menu(id_cliente):
+    """Pedidos, avisos y contadores de un cliente (los usa el menú y la actualización en vivo)."""
     conn = get_connection()
     try:
         cur = conn.cursor(dictionary=True)
@@ -200,8 +201,32 @@ def cliente_menu():
         conn.close()
     resumen = {"pendientes": sum(p["estado"] == "pendiente" for p in pedidos),
                "listos": sum(p["estado"] == "listo" for p in pedidos)}
+    return pedidos, notifs, resumen, any(not n["leida"] for n in notifs)
+
+
+@app.route("/cliente/menu")
+@solo_cliente
+def cliente_menu():
+    """Menú principal del cliente: estado de sus pedidos (RF-05, RF-18) y avisos (RF-04)."""
+    pedidos, notifs, resumen, hay_sin_leer = cargar_menu(session["id_usuario"])
     return render_template("cliente.html", nombre=session["nombre"], pedidos=pedidos, resumen=resumen,
-                           notifs=notifs, hay_sin_leer=any(not n["leida"] for n in notifs))
+                           notifs=notifs, hay_sin_leer=hay_sin_leer)
+
+
+@app.route("/cliente/pedidos/actualizar")
+def cliente_actualizar():
+    """Estado actual de los pedidos y avisos del cliente. El menú lo consulta cada pocos
+    segundos, así ve al instante lo que el empleado cambia sin recargar la página."""
+    if session.get("rol") != "cliente":
+        return error("Su sesión terminó. Inicie sesión de nuevo.", 401)
+    pedidos, notifs, resumen, hay_sin_leer = cargar_menu(session["id_usuario"])
+    respuesta = jsonify(
+        ok=True,
+        pedidos_html=render_template("_cliente_pedidos.html", pedidos=pedidos),
+        notifs_html=render_template("_cliente_notifs.html", notifs=notifs),
+        pendientes=resumen["pendientes"], listos=resumen["listos"], hay_sin_leer=hay_sin_leer)
+    respuesta.headers["Cache-Control"] = "no-store"
+    return respuesta
 
 
 @app.route("/pedido/<int:folio>/cancelar", methods=["POST"])

@@ -1,0 +1,26 @@
+{% set ico = {
+ 'impresion':'<svg class="i" viewBox="0 0 24 24"><path d="M6 9V3h12v6M6 18H4v-7h16v7h-2M7 14h10v7H7z"/></svg>',
+ 'copiado':'<svg class="i" viewBox="0 0 24 24"><rect x="8" y="8" width="12" height="12" rx="2"/><path d="M16 8V6a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h2"/></svg>',
+ 'diseno':'<svg class="i" viewBox="0 0 24 24"><path d="M12 3a9 9 0 1 0 0 18c1.5 0 2-1 1.5-2s0-2 1.5-2h2a4 4 0 0 0 4-4c0-5-4.5-10-9-10z"/></svg>',
+ 'engargolado':'<svg class="i" viewBox="0 0 24 24"><path d="M5 4h11a3 3 0 0 1 3 3v13H8a3 3 0 0 1-3-3zM5 17a3 3 0 0 1 3-3h11"/></svg>'} %}
+{% set color = {'impresion':'azul','copiado':'azul','diseno':'mor','engargolado':'ver'} %}
+  {% for p in pedidos %}
+    <article class="ped">
+      <div class="ped-top">
+        <span class="sico {{ color[p.servicio] }}" aria-hidden="true">{{ ico[p.servicio]|safe }}</span>
+        <div class="ped-cuerpo">
+          <div class="ped-fila"><b>{{ p.servicio_nombre }}</b><span class="est st-{{ p.estado }}">{{ p.estado|capitalize }}</span></div>
+          <p class="ped-desc">{{ p.desc }}</p>
+          <div class="ped-fila"><span class="ped-sub">{{ p.detalle }}</span><span class="ped-sub">{{ p.fecha }}</span></div>
+        </div>
+      </div>
+      <div class="ped-pie">
+        <span class="folio">#{{ p.folio }}</span>
+        {% if p.estado == 'pendiente' %}<button type="button" class="cancelar" data-folio="{{ p.folio }}">✕ Cancelar pedido</button>
+        {% elif p.estado == 'listo' %}<span class="recoger">✓ Listo para recoger</span>
+        {% else %}<span class="ped-sub">Entregado</span>{% endif %}
+      </div>
+    </article>
+  {% else %}
+    <p class="vacio">Aún no tienes pedidos. Pulsa «Nuevo Pedido» para registrar el primero.</p>
+  {% endfor %}
