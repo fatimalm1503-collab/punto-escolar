@@ -9,6 +9,7 @@
 *{box-sizing:border-box}
 body{margin:0;font-family:Inter,system-ui,sans-serif;color:var(--tx);background:#fff}
 .wrap{display:flex;min-height:100vh}
+.wrap.invertido{flex-direction:row-reverse}
 .lado{width:clamp(300px,23vw,440px);flex-shrink:0;background:linear-gradient(160deg,#1E3A8A,#2563EB 55%,#3B82F6);color:#fff;padding:32px;display:flex;flex-direction:column;justify-content:center;align-items:center;text-align:center}
 .lado .ico{width:72px;height:72px;border-radius:20px;background:#ffffff26;border:1px solid #ffffff40;display:grid;place-items:center;margin-bottom:20px}
 .lado h2{font-size:34px;margin:0 0 6px}
@@ -44,7 +45,7 @@ label{display:block;font-size:13px;font-weight:600;margin:16px 0 8px}
 </style>
 </head>
 <body>
-<div class="wrap">
+<div class="wrap {% block invertido %}{% endblock %}">
   <aside class="lado">
     <div class="ico" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M6 9V3h12v6M6 18H4v-7h16v7h-2M7 14h10v7H7z"/></svg></div>
     <h2>Punto Escolar</h2>

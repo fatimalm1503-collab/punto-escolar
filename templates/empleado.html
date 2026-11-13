@@ -5,22 +5,56 @@
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Punto Escolar · Empleado</title>
 <style>
+*{box-sizing:border-box}
 body{margin:0;background:#F1F5F9;font-family:Inter,system-ui,sans-serif;color:#0F172A}
 header{background:#fff;padding:16px 24px;border-bottom:1px solid #E2E8F0;display:flex;gap:12px;align-items:center}
+.sesion{margin-left:auto;display:flex;align-items:center;gap:14px;font-size:15px;flex-wrap:wrap;justify-content:flex-end}
+.sesion form{margin:0}
+.salir{font:inherit;font-size:14px;font-weight:600;border:0;border-radius:10px;background:#F1F5F9;color:#0F172A;padding:8px 14px;cursor:pointer}
+.salir:hover{background:#E2E8F0}
 .logo{width:40px;height:40px;border-radius:10px;background:#2563EB;color:#fff;display:grid;place-items:center}
 main{max-width:900px;margin:24px auto;padding:0 16px}
 .tabla{background:#fff;border-radius:16px;box-shadow:0 2px 12px #0001;overflow-x:auto}
 table{width:100%;border-collapse:collapse}
 th{font-size:12px;text-transform:uppercase;letter-spacing:.08em;color:#64748B;text-align:left;padding:14px 16px}
 td{padding:14px 16px;border-top:1px solid #E2E8F0}
-tr:nth-child(even) td{background:#F8FAFC}
+tbody tr[data-folio]{cursor:pointer}
+tbody tr[data-folio]:hover td{background:#EFF6FF}
+tbody tr.sel td{background:#DBEAFE}
 .b{display:inline-block;padding:3px 12px;border-radius:999px;font-size:13px;font-weight:600}
 .pendiente{background:#FEF3C7;color:#92400E}.listo{background:#DCFCE7;color:#166534}.entregado{background:#E2E8F0;color:#334155}
 small{color:#64748B}
+
+/* Panel lateral (desde la derecha) */
+.fondo{position:fixed;inset:0;background:#0F172A66;opacity:0;pointer-events:none;transition:opacity .25s}
+.fondo.on{opacity:1;pointer-events:auto}
+.panel{position:fixed;top:0;right:0;height:100%;width:100%;max-width:400px;background:#fff;box-shadow:-8px 0 30px #0003;
+  transform:translateX(100%);transition:transform .25s;display:flex;flex-direction:column}
+.panel.on{transform:translateX(0)}
+.ph{padding:20px 24px;border-bottom:1px solid #E2E8F0;display:flex;justify-content:space-between;align-items:flex-start}
+.ph h2{margin:0;font-size:22px}
+.x{font:inherit;font-size:22px;line-height:1;border:0;background:#F1F5F9;border-radius:10px;width:36px;height:36px;cursor:pointer}
+.pc{padding:20px 24px;overflow-y:auto;flex:1}
+.lab{font-size:12px;font-weight:600;color:#64748B;letter-spacing:.06em;text-transform:uppercase;margin:16px 0 4px}
+.lab:first-child{margin-top:0}
+.val{font-size:15px;margin:0}
+.pie{padding:16px 24px;border-top:1px solid #E2E8F0}
+.btn{font:inherit;font-weight:600;font-size:16px;min-height:52px;width:100%;border:0;border-radius:16px;cursor:pointer;background:#2563EB;color:#fff}
+.btn:disabled{opacity:.45;cursor:not-allowed}
+.fin{margin:0;text-align:center;color:#64748B;font-size:14px}
+.err{margin:0 0 10px;padding:10px 12px;border-radius:12px;background:#FEF2F2;border:1px solid #DC2626;color:#991B1B;font-size:14px}
+:focus-visible{outline:3px solid #2563EB;outline-offset:2px}
+[hidden]{display:none!important}
 </style>
 </head>
 <body>
-<header><div class="logo" aria-hidden="true">🖨</div><div><b>Punto Escolar</b><br><small>EMPLEADO</small></div></header>
+<header>
+  <div class="logo" aria-hidden="true">🖨</div><div><b>Punto Escolar</b><br><small>EMPLEADO</small></div>
+  <div class="sesion">
+    <span>Bienvenido, <b>{{ nombre }}</b></span>
+    <form method="post" action="{{ url_for('empleado_logout') }}"><button class="salir" type="submit">Cerrar sesión</button></form>
+  </div>
+</header>
 <main>
   <h1>Lista de pedidos</h1>
   <div class="tabla">
@@ -28,7 +62,7 @@ small{color:#64748B}
       <thead><tr><th>Folio</th><th>Servicio</th><th>Entrega</th><th>Estado</th></tr></thead>
       <tbody>
       {% for p in pedidos %}
-        <tr>
+        <tr data-folio="{{ p.folio }}" tabindex="0">
           <td><b>#{{ p.folio }}</b><br><small>{{ p.fecha_registro.strftime('%d/%m/%Y %H:%M') }}</small></td>
           <td>{{ p.servicio|capitalize }}</td>
           <td>{{ p.tipo_entrega|upper }}</td>
@@ -41,5 +75,113 @@ small{color:#64748B}
     </table>
   </div>
 </main>
+
+<div class="fondo" id="fondo"></div>
+<aside class="panel" id="panel" aria-hidden="true" aria-label="Detalles del pedido">
+  <div class="ph">
+    <div><h2 id="p-folio"></h2><span class="b" id="p-estado"></span></div>
+    <button class="x" id="cerrar" aria-label="Cerrar">×</button>
+  </div>
+  <div class="pc" id="p-detalles"></div>
+  <div class="pie">
+    <p class="err" id="p-error" hidden></p>
+    <button class="btn" id="p-cambiar" hidden></button>
+    <p class="fin" id="p-fin" hidden>Pedido entregado. No hay más cambios de estado.</p>
+  </div>
+</aside>
+
+<script>
+const SIGUIENTE = {pendiente: "listo", listo: "entregado"};
+const TEXTO_BOTON = {listo: "Marcar como Listo", entregado: "Marcar como Entregado"};
+const $ = id => document.getElementById(id);
+const cap = t => t.charAt(0).toUpperCase() + t.slice(1);
+let actual = null; // {folio, estado}
+
+function badge(el, estado){ el.className = "b " + estado; el.textContent = cap(estado); }
+
+function fila(etiqueta, valor){
+  if (valor === null || valor === undefined || valor === "") return "";
+  const d = document.createElement("div");
+  const l = document.createElement("p"); l.className = "lab"; l.textContent = etiqueta;
+  const v = document.createElement("p"); v.className = "val"; v.textContent = valor;
+  d.append(l, v);
+  return d.innerHTML;
+}
+
+function pintarBoton(){
+  const sig = SIGUIENTE[actual.estado];
+  $("p-cambiar").hidden = !sig;
+  $("p-fin").hidden = !!sig;
+  if (sig) $("p-cambiar").textContent = TEXTO_BOTON[sig];
+}
+
+function abrir(){ $("panel").classList.add("on"); $("fondo").classList.add("on"); $("panel").setAttribute("aria-hidden","false"); }
+function cerrar(){
+  $("panel").classList.remove("on"); $("fondo").classList.remove("on"); $("panel").setAttribute("aria-hidden","true");
+  document.querySelectorAll("tr.sel").forEach(r => r.classList.remove("sel"));
+}
+
+async function verPedido(tr){
+  document.querySelectorAll("tr.sel").forEach(r => r.classList.remove("sel"));
+  tr.classList.add("sel");
+  $("p-error").hidden = true;
+  const r = await fetch("/empleado/pedido/" + tr.dataset.folio);
+  if (r.status === 401){ location.href = "/empleado/login"; return; }
+  const data = await r.json();
+  if (!data.ok){ alert(data.error); return; }
+  const p = data.pedido;
+  actual = {folio: p.folio, estado: p.estado};
+  $("p-folio").textContent = "Pedido #" + p.folio;
+  badge($("p-estado"), p.estado);
+  const modo = p.es_color === null ? null : (p.es_color ? "Color" : "Blanco y negro");
+  $("p-detalles").innerHTML =
+    fila("Cliente", p.cliente) +
+    fila("Servicio", cap(p.servicio)) +
+    fila("Forma de entrega", p.tipo_entrega === "usb" ? "USB" : "Digital") +
+    fila("Archivo adjunto", p.archivo) +
+    fila("Modo", modo) +
+    fila("Número de copias", p.num_copias) +
+    fila("Tipo de diseño", p.tipo_diseno) +
+    fila("Tipo de engargolado", p.tipo_engargolado) +
+    fila("Tamaño de hojas", p.tamano_hojas) +
+    fila("Color de pastas", p.color_pastas) +
+    fila("Descripción", p.descripcion) +
+    fila("Fecha de registro", p.fecha_registro);
+  pintarBoton();
+  abrir();
+}
+
+async function cambiarEstado(){
+  const nuevo = SIGUIENTE[actual.estado];
+  $("p-cambiar").disabled = true;
+  $("p-error").hidden = true;
+  try {
+    const r = await fetch("/empleado/pedido/" + actual.folio + "/estado", {
+      method: "POST", headers: {"Content-Type": "application/json"}, body: JSON.stringify({estado: nuevo})
+    });
+    if (r.status === 401){ location.href = "/empleado/login"; return; }
+    const data = await r.json();
+    if (!data.ok){ $("p-error").textContent = data.error; $("p-error").hidden = false; return; }
+    actual.estado = data.estado;
+    badge($("p-estado"), data.estado);
+    const tr = document.querySelector('tr[data-folio="' + actual.folio + '"]');
+    badge(tr.querySelector(".b"), data.estado);
+    pintarBoton();
+  } catch (e) {
+    $("p-error").textContent = "No se pudo conectar con el servidor."; $("p-error").hidden = false;
+  } finally {
+    $("p-cambiar").disabled = false;
+  }
+}
+
+document.querySelectorAll("tr[data-folio]").forEach(tr => {
+  tr.addEventListener("click", () => verPedido(tr));
+  tr.addEventListener("keydown", e => { if (e.key === "Enter") verPedido(tr); });
+});
+$("p-cambiar").addEventListener("click", cambiarEstado);
+$("cerrar").addEventListener("click", cerrar);
+$("fondo").addEventListener("click", cerrar);
+document.addEventListener("keydown", e => { if (e.key === "Escape") cerrar(); });
+</script>
 </body>
 </html>

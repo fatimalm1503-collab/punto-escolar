@@ -25,12 +25,16 @@ punto-escolar/
 ├── app.py            # servidor Flask y rutas
 ├── db.py             # conexión a la base de datos
 ├── schema.sql        # creación de la BD (tablas, triggers y datos de prueba)
+├── datos_prueba.sql  # repuebla las tablas con usuarios y pedidos de prueba
 ├── probar_bd.py      # prueba rápida de conexión
 ├── requirements.txt
 ├── .env.example      # plantilla de configuración
 └── templates/
-    ├── cliente.html  # CU-03 Registrar Pedido
-    └── empleado.html # lista de pedidos (vista mínima)
+    ├── cliente.html            # CU-03 Registrar Pedido
+    ├── cliente_login.html / cliente_registro.html
+    ├── empleado.html           # CU-07 Menú Principal Empleado
+    ├── empleado_login.html / empleado_registro.html
+    └── auth_base.html / _campos.html   # base visual compartida del acceso
 ```
 
 ## Cómo ejecutar el proyecto
@@ -99,3 +103,19 @@ Para ver la vista del cliente desde un celular en la misma red Wi-Fi, ejecuta `f
 - Hecho: conexión a MySQL, registro de pedidos (CU-03), lista de pedidos del empleado.
 - Sin login por ahora: los pedidos se registran con un cliente de prueba (Martha Silva, `id_usuario = 2`).
 - Pendiente: inicio de sesión y registro de usuarios, detalle del pedido y cambio de estado (CU-07), eliminar archivo, notificaciones en pantalla, cancelar pedido.
+
+## Rutas principales
+
+| Ruta | Quién | Qué hace |
+|---|---|---|
+| `/cliente/login`, `/cliente/registro` | Cliente | Acceso y alta de cliente |
+| `/cliente/menu` | Cliente | Registrar pedido y ver sus pedidos y avisos |
+| `/empleado/login`, `/empleado/registro` | Empleado | Acceso y alta de empleado |
+| `/empleado` | Empleado | Lista de todos los pedidos, detalle y cambio de estado |
+
+## Usuarios de prueba (después de ejecutar `datos_prueba.sql`)
+
+| Usuario | Contraseña | Rol |
+|---|---|---|
+| `empleado1`, `laura.gomez` | `empleado123` | Empleado |
+| `martha.silva`, `juan.perez` | `cliente123` | Cliente |

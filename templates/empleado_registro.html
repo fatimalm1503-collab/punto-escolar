@@ -1,0 +1,19 @@
+{% extends "auth_base.html" %}
+{% from "_campos.html" import campo, mensajes %}
+{% block titulo %}Crear cuenta · Empleado{% endblock %}
+{% block arriba %}<a class="volver" href="{{ url_for('empleado_login') }}">← Volver al inicio de sesión</a>{% endblock %}
+{% block invertido %}invertido{% endblock %}
+{% block contenido %}
+<h1>Crear cuenta de Empleado</h1>
+<p class="sub">Regístrate para revisar los pedidos y cambiar su estado.</p>
+<form method="post" novalidate>
+  {{ campo('nombre', 'Nombre completo', 'text', 'user', 'Laura Gómez', datos.nombre, 'name') }}
+  {{ campo('usuario', 'Usuario', 'text', 'at', 'laura.gomez', datos.usuario, 'username') }}
+  {{ campo('correo', 'Correo electrónico', 'email', 'mail', 'nombre@correo.com', datos.correo, 'email') }}
+  {{ campo('password', 'Contraseña', 'password', 'lock', 'Mínimo 6 caracteres', '', 'new-password', true) }}
+  {{ campo('confirmar', 'Confirmar contraseña', 'password', 'lock', 'Repite tu contraseña', '', 'new-password', true) }}
+  {{ mensajes(error) }}
+  <button class="btn" type="submit">Crear Cuenta</button>
+</form>
+<p class="pie">¿Ya tienes cuenta? <a href="{{ url_for('empleado_login') }}">Inicia sesión</a></p>
+{% endblock %}

@@ -1,0 +1,16 @@
+{% extends "auth_base.html" %}
+{% from "_campos.html" import campo, mensajes %}
+{% block titulo %}Iniciar sesión · Empleado{% endblock %}
+{% block invertido %}invertido{% endblock %}
+{% block contenido %}
+<h1>Iniciar Sesión</h1>
+<p class="sub">Bienvenido de nuevo. Accede a tu cuenta de empleado.</p>
+<form method="post" novalidate>
+  {{ campo('usuario', 'Nombre de usuario', 'text', 'at', 'tu.usuario', usuario, 'username') }}
+  {{ campo('password', 'Contraseña', 'password', 'lock', 'Tu contraseña', '', 'current-password', true) }}
+  {{ mensajes(error) }}
+  <button class="btn" type="submit">Iniciar Sesión</button>
+</form>
+<p class="pie">¿No tienes una cuenta? <a href="{{ url_for('empleado_registro') }}">Crear una</a></p>
+<p class="pie" style="margin-top:8px">¿Eres cliente? <a href="{{ url_for('cliente_login') }}">Ingresa aquí</a></p>
+{% endblock %}

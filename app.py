@@ -58,8 +58,8 @@ def validar_registro(d, clave, confirmar):
 
 @app.route("/")
 def inicio():
-    destino = "cliente_menu" if session.get("rol") == "cliente" else "cliente_login"
-    return redirect(url_for(destino))
+    destinos = {"cliente": "cliente_menu", "empleado": "lista_empleado"}
+    return redirect(url_for(destinos.get(session.get("rol"), "cliente_login")))
 
 
 @app.route("/cliente/registro", methods=["GET", "POST"])
@@ -345,10 +345,114 @@ def registrar_pedido():
 
 
 # ----------------------------------------------------------------------
-# Empleado: vista mínima temporal. PENDIENTE: login propio del empleado (RN-05).
+# Empleado: acceso (RF-10, RF-14, RN-05) y Menú Principal (CU-07)
 # ----------------------------------------------------------------------
+def solo_empleado(vista):
+    """RN-05: solo un empleado con sesión iniciada entra a las funciones del empleado."""
+    @wraps(vista)
+    def envoltura(*args, **kwargs):
+        if session.get("rol") != "empleado":
+            if request.path.startswith("/empleado/pedido"):
+                return error("Inicia sesión para continuar.", 401)
+            return redirect(url_for("empleado_login"))
+        return vista(*args, **kwargs)
+    return envoltura
+
+
+def iniciar_sesion_empleado(id_usuario, nombre):
+    session.clear()
+    session["id_usuario"] = id_usuario
+    session["nombre"] = nombre
+    session["rol"] = "empleado"
+
+
+@app.route("/empleado/login", methods=["GET", "POST"])
+def empleado_login():
+    if session.get("rol") == "empleado":
+        return redirect(url_for("lista_empleado"))
+    usuario = ""
+    mensaje = None
+    if request.method == "POST":
+        usuario = (request.form.get("usuario") or "").strip()
+        clave = request.form.get("password") or ""
+        if not usuario or not clave:
+            mensaje = "Ingrese su usuario y su contraseña."
+        else:
+            conn = get_connection()
+            try:
+                cur = conn.cursor(dictionary=True)
+                cur.execute(
+                    "SELECT id_usuario, nombre, password_hash FROM usuario "
+                    "WHERE rol = 'empleado' AND usuario = %s", (usuario,))
+                u = cur.fetchone()
+            finally:
+                conn.close()
+            try:
+                valido = bool(u) and check_password_hash(u["password_hash"], clave)
+            except ValueError:  # hash de ejemplo, no es un hash real
+                valido = False
+            if valido:
+                iniciar_sesion_empleado(u["id_usuario"], u["nombre"])
+                return redirect(url_for("lista_empleado"))
+            mensaje = "Usuario o contraseña incorrectos."
+    return render_template("empleado_login.html", error=mensaje, usuario=usuario)
+
+
+@app.route("/empleado/registro", methods=["GET", "POST"])
+def empleado_registro():
+    """Crea la cuenta de un empleado (rol = 'empleado') y entra directo al menú."""
+    if session.get("rol") == "empleado":
+        return redirect(url_for("lista_empleado"))
+    datos = {"nombre": "", "usuario": "", "correo": ""}
+    mensaje = None
+    if request.method == "POST":
+        datos = {k: (request.form.get(k) or "").strip() for k in datos}
+        datos["correo"] = datos["correo"].lower()
+        clave = request.form.get("password") or ""
+        mensaje = validar_registro(datos, clave, request.form.get("confirmar") or "")
+        if not mensaje:
+            conn = get_connection()
+            id_nuevo = None
+            try:
+                cur = conn.cursor()
+                cur.execute(
+                    "INSERT INTO usuario (rol, nombre, usuario, correo, password_hash) "
+                    "VALUES ('empleado', %s, %s, %s, %s)",
+                    (datos["nombre"], datos["usuario"], datos["correo"], generate_password_hash(clave)))
+                conn.commit()
+                id_nuevo = cur.lastrowid
+            except mysql.connector.IntegrityError as e:
+                conn.rollback()
+                # MySQL dice cuál llave se repitió: "... for key 'usuario.correo'"
+                if "correo" in str(e).split("for key")[-1]:
+                    mensaje = "Ese correo ya está registrado."
+                else:
+                    mensaje = "Ese usuario ya está registrado."
+            except mysql.connector.Error as e:
+                conn.rollback()
+                print("Error al registrar empleado:", e)
+                mensaje = "No se pudo crear la cuenta. Intente de nuevo."
+            finally:
+                conn.close()
+            if id_nuevo:
+                iniciar_sesion_empleado(id_nuevo, datos["nombre"])
+                return redirect(url_for("lista_empleado"))
+    return render_template("empleado_registro.html", error=mensaje, datos=datos)
+
+
+@app.route("/empleado/logout", methods=["POST"])
+def empleado_logout():
+    session.clear()
+    return redirect(url_for("empleado_login"))
+
+
+SIGUIENTE_ESTADO = {"pendiente": "listo", "listo": "entregado"}  # RN-01: unico orden permitido
+
+
 @app.route("/empleado")
+@solo_empleado
 def lista_empleado():
+    """CU-07 Menú Principal Empleado: lista de todos los pedidos."""
     conn = get_connection()
     try:
         cur = conn.cursor(dictionary=True)
@@ -356,7 +460,60 @@ def lista_empleado():
             """SELECT id_pedido AS folio, servicio, estado, tipo_entrega, fecha_registro
                FROM pedido ORDER BY fecha_registro DESC, id_pedido DESC"""
         )
-        return render_template("empleado.html", pedidos=cur.fetchall())
+        return render_template("empleado.html", pedidos=cur.fetchall(), nombre=session["nombre"])
+    finally:
+        conn.close()
+
+
+@app.route("/empleado/pedido/<int:folio>")
+@solo_empleado
+def detalle_pedido(folio):
+    """Devuelve (JSON) toda la información de un pedido para el panel lateral."""
+    conn = get_connection()
+    try:
+        cur = conn.cursor(dictionary=True)
+        cur.execute(
+            """SELECT p.id_pedido AS folio, p.servicio, p.estado, p.tipo_entrega,
+                      p.es_color, p.num_copias, p.tipo_diseno, p.tipo_engargolado,
+                      p.tamano_hojas, p.color_pastas, p.descripcion, p.fecha_registro,
+                      u.nombre AS cliente, a.nombre AS archivo
+               FROM pedido p
+               JOIN usuario u ON u.id_usuario = p.id_cliente
+               LEFT JOIN archivo a ON a.id_pedido = p.id_pedido
+               WHERE p.id_pedido = %s""",
+            (folio,),
+        )
+        fila = cur.fetchone()
+        if not fila:
+            return error("El pedido no existe.", 404)
+        fila["fecha_registro"] = fila["fecha_registro"].strftime("%d/%m/%Y %H:%M")
+        return jsonify(ok=True, pedido=fila)
+    finally:
+        conn.close()
+
+
+@app.route("/empleado/pedido/<int:folio>/estado", methods=["POST"])
+@solo_empleado
+def cambiar_estado(folio):
+    """Avanza el estado del pedido: pendiente -> listo -> entregado (RN-01).
+    Al pasar a 'listo', un trigger de la BD notifica al cliente (RF-04)."""
+    nuevo = (request.get_json(silent=True) or {}).get("estado")
+    conn = get_connection()
+    try:
+        cur = conn.cursor(dictionary=True)
+        cur.execute("SELECT estado FROM pedido WHERE id_pedido = %s", (folio,))
+        fila = cur.fetchone()
+        if not fila:
+            return error("El pedido no existe.", 404)
+        if SIGUIENTE_ESTADO.get(fila["estado"]) != nuevo:
+            return error("El estado solo puede avanzar: pendiente, listo, entregado.")
+        cur.execute("UPDATE pedido SET estado = %s WHERE id_pedido = %s", (nuevo, folio))
+        conn.commit()
+        return jsonify(ok=True, folio=folio, estado=nuevo)
+    except Exception as e:
+        conn.rollback()
+        print("Error al cambiar estado:", e)
+        return error("No se pudo cambiar el estado. Intente de nuevo.", 500)
     finally:
         conn.close()
 
