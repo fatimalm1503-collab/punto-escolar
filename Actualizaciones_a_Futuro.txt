@@ -1,0 +1,24 @@
+Posibles mejoras que se le podrían realizar a este Sistema:
+
+- Modo de Filtrado de los 4 tipos de encargos:
+
+Con el fin de organizar mejor y permitir a los empleados tener una visualización mas clara
+de los pedidos que se reciben, una forma de filtrar cual de los 4 encargos fueron realizados, seria muy útil
+
+- Sistema de Pago por Adelantado:
+
+Para garantizar que el cliente genuinamente vaya a comprar/pagar por el servicio realizado, implementar
+una forma de pago obligatorio por adelantado, ayudaría a evitar que se pierda dinero y recursos, en pedidos
+nunca recibidos o el material gastado en ellos
+
+- Identificación activa de los Empleados:
+
+Para que los registros tengan mas información en cuenta, una forma de identificar, que Empleado realizo X accion
+permitiría al Sistema organizar mejor las actividades de los Empleados, ver cuales trabajaron mas, a quien han atendido
+o que recursos han utilizado
+
+- Gestion de Ventas:
+
+Con el fin de mejorar las ganancias y minimizar los costos de la empresa, una forma de ver cual tipo de encargo fue
+mas/menos solicitado, para asi enfocarse mas en el mas beneficioso, siguiendo reglas de la economía como
+la Oferta y la Demanda, o la Publicidad
